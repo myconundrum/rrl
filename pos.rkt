@@ -1,13 +1,27 @@
 #lang racket
 
+(require lens)
+
 (provide (struct-out rect)
          pos
+         x-lens
+         y-lens
          pos-x
          pos-y
          pos-delta
          pos-clamp
+         pos-swapxy
          rect-center
          rects-intersect?)
+
+
+
+(define x-lens
+    (make-lens real-part
+               (λ (n r) (make-rectangular (real-part r) (imag-part n)))))
+(define y-lens
+    (make-lens imag-part
+               (λ (n i) (make-rectangular (real-part n) (real-part i)))))
 
 
 
@@ -20,9 +34,12 @@
 (define (pos-x p) (real-part p))
 (define (pos-y p) (imag-part p))
 
+
 ; (pos nat nat) -> pos
 (define (pos-delta p dx dy) (pos (+ (pos-x p) dx) (+ (pos-y p) dy)))
 
+; (pos) -> (pos)
+(define (pos-swapxy p) (pos (pos-y p) (pos-x p)))
 
 ;(pos nat nat nat nat) -> pos
 (define (pos-clamp p minx maxx miny maxy)

@@ -2,34 +2,32 @@
 
 
 (provide (struct-out object)
+         (struct-lenses-out object)
+         (struct-out item-state)
+         (struct-lenses-out item-state)
+         (struct-out actor-state)
+         (struct-lenses-out actor-state)
          make-object
+         make-actor
          object-at-pos?
          object-has-flag?
          object-rep
          object-color
-         object-setpos
-         object-setbase
-         object-setstate
 
 )
 
-(require "pos.rkt")
+(require lens unstable/lens "pos.rkt")
 
 
-(struct object (base pos state) #:transparent)
+(struct/lens object (base pos state) #:transparent)
+
+(struct/lens item-state (gold) #:transparent)
+(struct/lens actor-state (fov gold) #:transparent)
+
+(define (make-actor type [at (pos 0 0)])
+  (make-object type at (actor-state empty 0)))
 
 
-;(object pos) -> object
-(define (object-setpos o p)
-  (object (object-base o) p (object-state o)))
-
-;(object string) -> object
-(define (object-setbase o b)
-  (object b (object-pos o) (object-state o)))
-
-;(object state) -> object
-(define (object-setstate o s)
-  (object (object-base o) (object-pos o) s))
 
 ; (string pos state) -> object
 (define (make-object base [at (pos 0 0)] [state #f])
@@ -41,7 +39,7 @@
 
 ; (object flag-id) -> bool
 (define (object-has-flag? o f) 
-  (ormap (λ (flag) (eq? f flag)) (base-flags (object-base o))))
+  (ormap (λ (flag) (eq? f flag)) (base-flags (hash-ref object-templates (object-base o)))))
 
 ; (object) -> string
 (define (object-rep o) 
