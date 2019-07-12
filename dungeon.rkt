@@ -1,8 +1,16 @@
 #lang racket
 
-(require racket/random racket/hash "pos.rkt" "config.rkt")
-(provide create-dungeon)
+; generate a random dungeon structure
 
+(provide 
+ ; create a dungeon (a hash of open positions)
+ create-dungeon
+ ; is a given position on an open position?
+ dungeon-pos-open? 
+ ; return a valid pos that is open in this dungeon.
+ dungeon-random-open-pos)
+
+(require racket/random racket/hash "pos.rkt" "config.rkt")
 
 (define min-room-size 4)
 (define max-room-size 12)
@@ -24,7 +32,10 @@
 ; (nat nat) -> rect
 (define (random-rect width height)
   (let ([p1 (random-pos width height)])
-    (rect p1 (pos-delta p1 (random-wall-length) (random-wall-length)))))
+    (rect p1 (pos-clamp
+              (pos-delta p1 
+                         (random-wall-length) 
+                         (random-wall-length)) 0 width 0 height))))
 
 ; (nat nat nat) -> (room ...)
 (define (create-rooms width height max-rooms)
@@ -69,6 +80,10 @@
                             (rect-center (first rooms)) 
                             (rect-center (second rooms))) 
                            terrain))))
+
+
+(define (dungeon-pos-open? d p) (hash-ref d p #f))
+(define (dungeon-random-open-pos d) (random-ref (hash-keys d)))
 
 ;(nat nat nat) -> #hash of pos
 (define (create-dungeon width height maxrooms)

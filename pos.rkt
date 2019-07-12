@@ -1,6 +1,6 @@
 #lang racket
 
-(require lens)
+
 
 (provide (struct-out rect)
          pos
@@ -14,7 +14,7 @@
          rect-center
          rects-intersect?)
 
-
+(require lens)
 
 (define x-lens
     (make-lens real-part

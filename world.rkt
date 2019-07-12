@@ -29,9 +29,10 @@
 (define (world-explore w l)
   (lens-set 
    world-terrain-lens w
-   (foldl (λ (p h) (hash-set h p 
-                             (make-object
-                              (if (hash-ref (world-dungeon w) p #f) "floor" "wall")))) 
+   (foldl (λ (p h) 
+            (hash-set h p 
+                      (make-object 
+                       (if (dungeon-pos-open? (world-dungeon w) p) "floor" "wall")))) 
           (lens-view world-terrain-lens w) l)))
 
 
@@ -43,6 +44,7 @@
                   (create-dungeon columns rows max-rooms)
                   (hash)
                   columns rows)])
+
     (lens-set 
-     world-player-pos-lens w (random-ref (hash-keys (world-dungeon w))))))
+     world-player-pos-lens w (dungeon-random-open-pos (world-dungeon w)))))
 

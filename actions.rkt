@@ -23,7 +23,7 @@
           player-look-lens w 
           (make-field 
            (lens-view player-pos-lens w) 3 
-           (λ (p) #f)))])
+           (λ (p) (not (hash-ref (world-dungeon w) p #f)))))])
 
     (world-explore new-world 
                    (field-get-points (lens-view player-look-lens new-world)))))
