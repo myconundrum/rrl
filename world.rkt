@@ -1,50 +1,69 @@
 #lang racket
 
-
-
+; world is the set of terrain, entities, items that a player explores.
 
 (require lens unstable/lens racket/random 
          "object.rkt" "pos.rkt" "config.rkt" "dungeon.rkt")
 
-(provide (struct-lenses-out world)
-         (struct-out world)
-         make-world
+(provide make-world
+         
+         ; given a list of points (from a field of view of some sort typically)
+         ; explore those points from the unexplored terrain turning them into
+         ; real explored tiles
          world-explore
-         world-valid-pos?)
+         ; is a given pos valid in this world?
+         world-valid-pos?
+         ; lens accessors below.
+         world-player-lens
+         world-actors-lens
+         world-items-lens
+         world-explored-lens
+         world-unexplored-lens
+         world-width-lens
+         world-height-lens
+         world-player-pos-lens
+         world-player-look-lens)
 
 
-(struct/lens world (player actors items dungeon terrain width height))
-
-(define world-player-pos-lens
-  (lens-compose object-pos-lens world-player-lens))
-
-
-
+; is a given pos valid in this world?
 ;(world pos) -> bool
 (define (world-valid-pos? w p)
   (let ([x (pos-x p)] [y (pos-y p)])
-    (and (>= x 0) (>= y 0) (< x (world-width w)) (< y (world-height w)))))
+    (and (>= x 0) (>= y 0) 
+         (< x (ob-attribute w "width")) (< y (ob-attribute w "height")))))
 
+; given a list of points, explore these points and return a new world
 ; (world list) -> world
 (define (world-explore w l)
   (lens-set 
-   world-terrain-lens w
-   (foldl (λ (p h) 
-            (hash-set h p 
-                      (make-object 
-                       (if (dungeon-pos-open? (world-dungeon w) p) "floor" "wall")))) 
-          (lens-view world-terrain-lens w) l)))
+   world-explored-lens w
+   (foldl (λ (p h) (hash-set h p (ob (if (dungeon-pos-open? 
+                                          (ob-attribute w "unexplored") p) 
+                                         "floor" "wall")))) 
+          (lens-view world-explored-lens w) l)))
 
 
-;() -> world
+(define world-player-lens (ob-make-lens "player"))
+(define world-actors-lens (ob-make-lens "actors"))
+(define world-items-lens (ob-make-lens "items"))
+(define world-explored-lens (ob-make-lens "explored"))
+(define world-unexplored-lens (ob-make-lens "unexplored"))
+(define world-width-lens (ob-make-lens "width"))
+(define world-height-lens (ob-make-lens "height"))
+(define world-player-pos-lens (lens-compose ob-pos-lens world-player-lens))
+(define world-player-look-lens (lens-compose ob-fov-lens world-player-lens))
+
+
 (define (make-world)
-  (let ([w (world (make-actor "player") 
-                  empty
-                  empty
-                  (create-dungeon columns rows max-rooms)
-                  (hash)
-                  columns rows)])
 
-    (lens-set 
-     world-player-pos-lens w (dungeon-random-open-pos (world-dungeon w)))))
+  (define d (create-dungeon columns rows max-rooms))
+
+  (ob "meta" 
+      "player" (ob "player" #:pos (dungeon-random-open-pos d))
+      "actors" (hash)
+      "items" (hash)
+      "explored" (hash)
+      "unexplored" d
+      "width" columns
+      "height" rows))
 

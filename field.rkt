@@ -2,16 +2,16 @@
 
 
 
-(require lens unstable/lens "pos.rkt")
+(require lens unstable/lens "pos.rkt" "object.rkt")
 
 (provide field-has-pos?
          field-get-pos
          field-get-points
          make-field
-         (struct-out field)
-         (struct-lenses-out field))
+         field-points-lens
+         field-radius-lens)
 
-(struct/lens field (origin radius points) #:transparent)
+
 
 ;  Draw a line from x1,y1 to x2,y2 using Bresenham's. 
 ; Adapted from http://rosettacode.org/wiki/Bitmap/Bresenham's_line_algorithm#Clojure
@@ -47,6 +47,7 @@
           (if (< error dy)
               (loop (addpoint coords p) (pos-delta p 1 step) (+ error (- dx dy)))  
               (loop (addpoint coords p) (pos-delta p 1 0) (- error dy)))))))
+
 
 
 ; (pos nat nat) -> '(pos ...)
@@ -94,11 +95,11 @@
   (make-hash (map (λ (p1) (cons p1 (weight-point p0 p1))) points)))
 
 ;(field pos) -> bool
-(define (field-has-pos? f p) (hash-ref (field-points f) p #f))
+(define (field-has-pos? f p) (hash-ref (ob-attribute f "points") p #f))
 ;(field pos) -> pos
-(define (field-get-pos f p) (hash-ref (field-points f) p #f))
+(define (field-get-pos f p) (hash-ref (ob-attribute f "points") p #f))
 
-(define (field-get-points f) (hash-keys (field-points f)))
+(define (field-get-points f) (hash-keys (ob-attribute f "points")))
 
 
 ; ('(pos ...) blocks-rayfn '(pos ...)) -> '(pos ...))
@@ -111,7 +112,14 @@
 (define (cast-field origin radius blocks-ray?)
   (flatten (map (λ (ray) (until-blocked ray blocks-ray?)) (get-field-rays origin radius))))
 
+
+(define field-points-lens (ob-make-lens "points"))
+(define field-radius-lens (ob-make-lens "radius"))
+
+
+
 ; (pos nat fn that returns true if a pos blocks a ray) -> (pos ...)
-(define (make-field origin radius blocks-ray?)
-  (field origin radius 
-         (weight-points origin (cast-field origin radius blocks-ray?))))
+(define (make-field origin radius blocks-ray?) 
+  (define o (ob "meta" #:pos origin "radius" radius))
+  (ob-attribute-set o "points"
+                    (weight-points origin (cast-field origin radius blocks-ray?))))

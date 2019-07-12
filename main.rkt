@@ -24,6 +24,5 @@
 
    (define (word-tick w) w)])
 
-
 (call-with-chaos 
  (make-gui) (λ () (fiat-lux (game-loop (action-player-look (make-world))))))
