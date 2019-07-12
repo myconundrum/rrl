@@ -1,8 +1,10 @@
 #lang racket
 
 
+;
+; field of view functions. Cast rays and return field of points.
+;
 
-(require lens unstable/lens "pos.rkt" "object.rkt")
 
 (provide field-has-pos?
          field-get-pos
@@ -11,7 +13,7 @@
          field-points-lens
          field-radius-lens)
 
-
+(require lens "pos.rkt" "object.rkt")
 
 ;  Draw a line from x1,y1 to x2,y2 using Bresenham's. 
 ; Adapted from http://rosettacode.org/wiki/Bitmap/Bresenham's_line_algorithm#Clojure
@@ -120,6 +122,5 @@
 
 ; (pos nat fn that returns true if a pos blocks a ray) -> (pos ...)
 (define (make-field origin radius blocks-ray?) 
-  (define o (ob "meta" #:pos origin "radius" radius))
-  (ob-attribute-set o "points"
-                    (weight-points origin (cast-field origin radius blocks-ray?))))
+  (ob "meta" #:pos origin "radius" radius
+      "points" (weight-points origin (cast-field origin radius blocks-ray?))))

@@ -40,12 +40,10 @@
 (define templates
   (hash
    "meta" empty
-   "player" '("rep" "@" "color" "green" "fov" empty)
+   "player" '("rep" "@" "color" "green" "gold" 0  "fov" empty)
    "wall" '("rep" "#" "color" "white")
-   "floor" '("rep" "." "color" "white" "flag-passable" #t))
-
-
-)
+   "floor" '("rep" "." "color" "white" "flag-passable" #t)
+   "gold" '("rep" "$" "color" "gold" "gold" 10 "flag-treasure" #t)))
 
 (define (ob type #:pos [at (pos 0 0)] . more-kv)
   (apply hash (append (list "type" type "pos" at) (hash-ref templates type) more-kv)))

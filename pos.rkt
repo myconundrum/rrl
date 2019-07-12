@@ -1,6 +1,6 @@
 #lang racket
 
-
+; position (x, y) utilities.
 
 (provide (struct-out rect)
          pos

@@ -24,6 +24,10 @@
     [else w]))
 
 
+(define (ui-draw-background-tile x y dc)
+  (send dc set-brush "black" 'solid)
+  (send dc draw-rectangle x y text-size text-size))
+
 (define (ui-shade-tile x y dc)
 
   (send dc set-alpha .6)
@@ -32,26 +36,31 @@
   (send dc set-alpha 1))
 
 
-(define (ui-draw-object o p in-fov? dc)
+(define (ui-draw-object o p in-fov? clear-background? dc)
   (define x (* text-size (pos-x p)))
   (define y (* text-size (pos-y p)))
-
+  (when clear-background? (ui-draw-background-tile x y dc))
   (send dc set-text-foreground (ob-color o))
   (send dc draw-text (ob-rep o) x y)
   (unless in-fov? (ui-shade-tile x y dc)))
 
-
+(define (ui-draw-items w dc)
+  (hash-for-each
+   (ob-attribute w "items")
+   (λ (p o) (when (field-has-pos? (lens-view world-player-look-lens w) p)
+              (ui-draw-object o p #t #t dc)))))
 
 (define (ui-draw-terrain  w dc)
   (hash-for-each 
    (ob-attribute w "explored") 
    (λ (p o) (ui-draw-object o p (field-has-pos? 
-                                 (lens-view world-player-look-lens w) p) dc))))
+                                 (lens-view world-player-look-lens w) p) #f dc))))
 
 
 (define (ui-draw-status w dc)
   (send dc set-text-foreground "white")
-  (send dc draw-text (format "(~a,~a)" 
+  (send dc draw-text (format "Gold: ~a Location: (~a,~a)"
+                             (ob-attribute (ob-attribute w "player") "gold")
                              (pos-x (lens-view world-player-pos-lens w))
                              (pos-y (lens-view world-player-pos-lens w))) 0 0))
 
@@ -59,10 +68,12 @@
 
   (send dc set-background "black")
   (send dc clear)
-
+  ; order of drawing is important here. Draw terrain then items, then actors
+  ; then player.
   (ui-draw-terrain w dc)
+  (ui-draw-items w dc)
   (ui-draw-object (ob-attribute w "player") 
-                  (lens-view world-player-pos-lens w) #t dc )
+                  (lens-view world-player-pos-lens w) #t #t dc )
   (ui-draw-status w dc))
 
 
