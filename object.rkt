@@ -20,11 +20,12 @@
          ob-color-lens 
          ob-fov-lens)
 
+
 (define (ob-attribute-clear o a) (hash-remove o a))
-(define (ob-attribute-set o a v) (hash-set o a v))
+(define (ob-attribute-set o . kv) (apply hash-set* o kv))
 (define (ob-flag-clear o f) (hash-remove o f))
 (define (ob-flag-set o f) (hash-set o f #t))
-(define (ob-attribute o a) (hash-ref o a #f))
+(define (ob-attribute o a [d #f]) (hash-ref o a d))
 (define (ob-has-flag? o f) (hash-has-key? o f))
 (define (ob-pos o) (hash-ref o 'pos))
 (define (ob-rep o) (hash-ref o 'rep))
@@ -39,6 +40,7 @@
 
 (define ob-templates
   (with-input-from-file "objects.db" (λ () (read-json))))
+
 
 (define (ob type #:pos [at (pos 0 0)] . more-kv)
   (hash-union (apply hash (append (list 'pos at) more-kv))

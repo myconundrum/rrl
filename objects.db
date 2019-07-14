@@ -1,6 +1,7 @@
 {
 "meta": {},
 "orc": {
+       "look-desc" : "an evil orc",
        "rep": "o",
        "color": "red",
        "flag-actor" : true,
@@ -9,6 +10,7 @@
        "maxhp" : 100
         },
 "player": {
+       "look-desc" : "an intrepid adventurer",
        "rep": "@",
        "color": "green",
        "flag-actor" : true,
@@ -17,16 +19,19 @@
        "maxhp" : 100
         },
 "gold": {
+       "look-desc" : "a pile of gold",
        "rep": "$",
        "color": "gold",
        "flag-treasure" : true,
        "gold" : 10 
         },
 "wall": {
+       "look-desc" : "a section of wall",
        "rep": "#",
        "color": "white"
         },
 "floor": {
+       "look-desc" : "the floor",
        "rep": ".",
        "color": "white",
        "flag-passable" : true
