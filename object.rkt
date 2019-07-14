@@ -2,10 +2,9 @@
 
 ; base level "game object" interface. 
 ; current implementation is just a hash table of text attributes.
-(require lens "pos.rkt")
+(require json lens racket/hash "pos.rkt")
 
-(provide
-         ob
+(provide ob
          ob-attribute-clear 
          ob-attribute-set
          ob-flag-clear
@@ -27,23 +26,20 @@
 (define (ob-flag-set o f) (hash-set o f #t))
 (define (ob-attribute o a) (hash-ref o a #f))
 (define (ob-has-flag? o f) (hash-has-key? o f))
-(define (ob-pos o) (hash-ref o "pos"))
-(define (ob-rep o) (hash-ref o "rep"))
-(define (ob-color o) (hash-ref o "color"))
+(define (ob-pos o) (hash-ref o 'pos))
+(define (ob-rep o) (hash-ref o 'rep))
+(define (ob-color o) (hash-ref o 'color))
 
 (define (ob-make-lens k) (hash-ref-lens k))
-(define ob-pos-lens (hash-ref-lens "pos"))
-(define ob-rep-lens (hash-ref-lens "rep"))
-(define ob-color-lens (hash-ref-lens "color"))
-(define ob-fov-lens (hash-ref-lens "fov"))
+(define ob-pos-lens (hash-ref-lens 'pos))
+(define ob-rep-lens (hash-ref-lens 'rep))
+(define ob-color-lens (hash-ref-lens 'color))
+(define ob-fov-lens (hash-ref-lens 'fov))
 
-(define templates
-  (hash
-   "meta" empty
-   "player" '("rep" "@" "color" "green" "gold" 0  "fov" empty)
-   "wall" '("rep" "#" "color" "white")
-   "floor" '("rep" "." "color" "white" "flag-passable" #t)
-   "gold" '("rep" "$" "color" "gold" "gold" 10 "flag-treasure" #t)))
+
+(define ob-templates
+  (with-input-from-file "objects.db" (λ () (read-json))))
 
 (define (ob type #:pos [at (pos 0 0)] . more-kv)
-  (apply hash (append (list "type" type "pos" at) (hash-ref templates type) more-kv)))
+  (hash-union (apply hash (append (list 'pos at) more-kv))
+              (hash-ref ob-templates type)))

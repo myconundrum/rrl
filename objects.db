@@ -1,0 +1,39 @@
+{
+"meta": {},
+"orc": {
+       "rep": "o",
+       "color": "red",
+       "flag-actor" : true,
+       "gold" : 0, 
+       "hp" : 100,
+       "maxhp" : 100
+        },
+"player": {
+       "rep": "@",
+       "color": "green",
+       "flag-actor" : true,
+       "gold" : 0, 
+       "hp" : 100,
+       "maxhp" : 100
+        },
+"gold": {
+       "rep": "$",
+       "color": "gold",
+       "flag-treasure" : true,
+       "gold" : 10 
+        },
+"wall": {
+       "rep": "#",
+       "color": "white"
+        },
+"floor": {
+       "rep": ".",
+       "color": "white",
+       "flag-passable" : true
+        }
+
+
+
+}
+
+        

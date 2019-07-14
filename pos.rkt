@@ -24,7 +24,6 @@
                (λ (n i) (make-rectangular (real-part n) (real-part i)))))
 
 
-
 ; using complex numbers as our representation of positions.
 ; (nat nat) -> (pos)
 ; x is stored as the real part and y as the imaginary.

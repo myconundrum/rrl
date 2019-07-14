@@ -97,11 +97,11 @@
   (make-hash (map (λ (p1) (cons p1 (weight-point p0 p1))) points)))
 
 ;(field pos) -> bool
-(define (field-has-pos? f p) (hash-ref (ob-attribute f "points") p #f))
+(define (field-has-pos? f p) (hash-ref (ob-attribute f 'points) p #f))
 ;(field pos) -> pos
-(define (field-get-pos f p) (hash-ref (ob-attribute f "points") p #f))
+(define (field-get-pos f p) (hash-ref (ob-attribute f 'points) p #f))
 
-(define (field-get-points f) (hash-keys (ob-attribute f "points")))
+(define (field-get-points f) (hash-keys (ob-attribute f 'points)))
 
 
 ; ('(pos ...) blocks-rayfn '(pos ...)) -> '(pos ...))
@@ -115,12 +115,12 @@
   (flatten (map (λ (ray) (until-blocked ray blocks-ray?)) (get-field-rays origin radius))))
 
 
-(define field-points-lens (ob-make-lens "points"))
-(define field-radius-lens (ob-make-lens "radius"))
+(define field-points-lens (ob-make-lens 'points))
+(define field-radius-lens (ob-make-lens 'radius))
 
 
 
 ; (pos nat fn that returns true if a pos blocks a ray) -> (pos ...)
 (define (make-field origin radius blocks-ray?) 
-  (ob "meta" #:pos origin "radius" radius
-      "points" (weight-points origin (cast-field origin radius blocks-ray?))))
+  (ob 'meta #:pos origin 'radius radius
+      'points (weight-points origin (cast-field origin radius blocks-ray?))))
