@@ -1,5 +1,26 @@
 {
 "meta": {},
+
+"action-move": {
+               "success-msg" : "%ANAME moved to %POS.",
+               "fail-msg" : "%ANAME attempted to move to %POS, but failed."
+
+
+},
+"action-attack": {
+               "success-msg" : "%ANAME attacks %TNAME.",
+               "fail-msg" : "%ANAME attempted to attack %TNAME, but failed."
+
+
+},
+"action-look": {
+               "unused" : "unused"
+
+
+},
+"action-pickup": {
+                 "unused" : "unused"               
+},
 "orc": {
        "look-desc" : "an evil orc",
        "rep": "o",

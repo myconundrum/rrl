@@ -4,6 +4,7 @@
 
 (provide (struct-out rect)
          pos
+         pos?
          x-lens
          y-lens
          pos-x
@@ -33,6 +34,8 @@
 (define (pos-x p) (real-part p))
 (define (pos-y p) (imag-part p))
 
+; (pos) -> bool
+(define (pos? p) (complex? p))
 
 ; (pos nat nat) -> pos
 (define (pos-delta p dx dy) (pos (+ (pos-x p) dx) (+ (pos-y p) dy)))

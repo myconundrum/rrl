@@ -4,7 +4,8 @@
          ui-draw-world)
 
 (require lens lux lux/chaos/gui lux/chaos/gui/key racket/draw racket/string
-         "actions.rkt" "world.rkt" "config.rkt" "object.rkt" "pos.rkt" "field.rkt")
+         "poslist.rkt" "actions.rkt" "world.rkt" "config.rkt" 
+         "object.rkt" "pos.rkt" "field.rkt")
 
 (define pixel-pad 3) ; extra padding beyond text-size between windows.
 (define msg-width (+ (* 2  pixel-pad) (* 20 text-size)))
@@ -28,9 +29,9 @@
 
 (define (ui-draw-hp dc w)
   (define p (world-player w))
-  (define ratio (/ (ob-attribute p 'hp) (ob-attribute p 'maxhp)))
+  (define ratio (/ (obget p 'hp) (obget p 'maxhp)))
   (define s (format "Hp: ~a / ~a" 
-                    (ob-attribute p 'hp)  (ob-attribute p 'maxhp)))
+                    (obget p 'hp)  (obget p 'maxhp)))
 
   (define c (cond [(> ratio .9) "green"][(> ratio .4) "yellow"][else "red"]))
 
@@ -45,12 +46,12 @@
   (send dc set-text-background ui-bg)
   (send dc set-text-foreground "gold")
   (send dc draw-text (format "Gold: ~a Loc (~a,~a)"
-                             (ob-attribute (world-player w) 'gold)
+                             (obget (world-player w) 'gold)
                              (pos-x (world-player-pos w))
                              (pos-y (world-player-pos w))) 0 0)
 
   (send dc draw-text (format "objects in fov: ~a"
-                             (ob-attribute (world-player w) 'objects-in-fov)) 0 40
+                             (obget (world-player w) 'objects-in-fov)) 0 40
         
 
 )
@@ -71,20 +72,30 @@
 
 ;; (world event) -> world
 ;;
+
+(define (ui-set-action w action target)
+  (obset w 'actors
+         (pl-set (obget w 'actors)
+                 (action-enqueue (world-player w) action target))))
+
 (define (ui-handle-input w e)
-  (cond
-    [(key-event? e)
-     (case (send e get-key-code)
-       [(#\a left) (action-player-move w -1 0)]
-       [(#\d right) (action-player-move w 1 0)]
-       [(#\s down) (action-player-move  w 0 1)]
-       [(#\w up) (action-player-move w 0 -1)]
-       [(#\l) (action-player-look w)]
-       [(#\b) (action-player-look-at w)]
-       [(escape #\q) #f]
-       [else w])]
-    [(eq? 'close w) #f]
-    [else w]))
+  (define p (world-player w))
+  (define new-world  
+    (cond
+      [(key-event? e)
+       (case (send e get-key-code)
+         [(#\a left) (ui-set-action w 'action-move (pos-delta (obget p 'pos) -1 0))]
+         [(#\d right) (ui-set-action w 'action-move (pos-delta (obget p 'pos) 1 0))]
+         [(#\s down)(ui-set-action w 'action-move (pos-delta (obget p 'pos) 0 1)) ]
+         [(#\w up) (ui-set-action w 'action-move (pos-delta (obget p 'pos) 0 -1))]
+         [(#\b) (action-player-look-at w)]
+         [(escape #\q) #f]
+         [else w])]
+      [(eq? 'close w) #f]
+      [else w]))
+  
+  (if new-world (action-update new-world) new-world))
+
 
 
 (define (ui-draw-tile dc x y c a)
@@ -97,26 +108,26 @@
 (define (ui-draw-object dc o p in-fov?)
   (define x (* text-size (pos-x p)))
   (define y (* text-size (pos-y p)))
-  (send dc set-text-foreground (ob-color o))
-  (send dc draw-text (ob-rep o) x y)
+  (send dc set-text-foreground (obget o 'color))
+  (send dc draw-text (obget o 'rep) x y)
   (unless in-fov? (ui-draw-tile dc x y dungeon-bg .6)))
 
 (define (ui-draw-items dc w)
-  (for ([p (ob-attribute (world-player w) 'objects-in-fov)])
-    (define o (ob-attribute (world-items w) p))
+  (for ([p (obget (world-player w) 'objects-in-fov)])
+    (define o (obget (world-items w) p))
     (when o (ui-draw-object dc o p #t))))
 
 (define (ui-draw-actors dc w)
-  (for ([p (ob-attribute (world-player w) 'objects-in-fov)])
-    (define o (ob-attribute (world-actors w) p))
+  (for ([p (obget (world-player w) 'objects-in-fov)])
+    (define o (obget (world-actors w) p))
     (when o (ui-draw-object dc o p #t))))
 
 
 (define (ui-draw-terrain dc w)
   (hash-for-each 
-   (ob-attribute w 'explored) 
+   (obget w 'explored) 
    (λ (p o) (ui-draw-object dc o p (field-has-pos?
-                                    (ob-attribute (world-player w) 'fov) p)))))
+                                    (obget (world-player w) 'fov) p)))))
 
 ;
 ; '(<color> <string> ...) 
@@ -135,13 +146,13 @@
 (define (ui-draw-look-at dc w width height)
   
   (define p (world-player w))
-  (define look-pos (if (= -1 (ob-attribute p 'look-at-index)) 
-                       #f (list-ref (ob-attribute p 'objects-in-fov) 
-                                    (ob-attribute p 'look-at-index))))
+  (define look-pos (if (= -1 (obget p 'look-at-index)) 
+                       #f (list-ref (obget p 'objects-in-fov) 
+                                    (obget p 'look-at-index))))
 
   (when look-pos
-    (let* ([o (hash-ref (world-actors w) look-pos #f)]
-           [o (if o o (hash-ref (world-items w) look-pos #f))])
+    (let* ([o (pl-get (world-actors w) look-pos)]
+           [o (if o o (pl-get (world-items w) look-pos))])
       ; BUGBUG - Should clean up the +1 , +5 skew below to line up
       ; the view target.
       (ui-draw-tile dc (+ 1 (* (pos-x look-pos) text-size)) 
@@ -154,7 +165,7 @@
       (send dc set-text-background ui-bg)
       (ui-draw-colorful-strings 
        dc 300 (- height text-size text-size) 
-       "white" "You see " (ob-color o) (ob-attribute o 'look-desc) "white" ".")
+       "white" "You see " (obget o 'color) (obget o 'look-desc) "white" ".")
       (send dc set-text-background dungeon-bg))))
 
 
@@ -179,7 +190,7 @@
   (ui-draw-terrain dc w)
   (ui-draw-items dc w)
   (ui-draw-actors dc w)
-  (ui-draw-object dc p (ob-pos p) #t)
+
 
   
   

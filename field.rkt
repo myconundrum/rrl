@@ -9,9 +9,7 @@
 (provide field-has-pos?
          field-get-pos
          field-get-points
-         make-field
-         field-points-lens
-         field-radius-lens)
+         make-field)
 
 (require lens "pos.rkt" "object.rkt")
 
@@ -97,11 +95,11 @@
   (make-hash (map (λ (p1) (cons p1 (weight-point p0 p1))) points)))
 
 ;(field pos) -> bool
-(define (field-has-pos? f p) (hash-ref (ob-attribute f 'points) p #f))
+(define (field-has-pos? f p) (hash-ref (obget f 'points) p #f))
 ;(field pos) -> pos
-(define (field-get-pos f p) (hash-ref (ob-attribute f 'points) p #f))
+(define (field-get-pos f p) (hash-ref (obget f 'points) p #f))
 
-(define (field-get-points f) (hash-keys (ob-attribute f 'points)))
+(define (field-get-points f) (hash-keys (obget f 'points)))
 
 
 ; ('(pos ...) blocks-rayfn '(pos ...)) -> '(pos ...))
@@ -113,11 +111,6 @@
 ; (pos nat blocks-rayfn) -> field
 (define (cast-field origin radius blocks-ray?)
   (flatten (map (λ (ray) (until-blocked ray blocks-ray?)) (get-field-rays origin radius))))
-
-
-(define field-points-lens (ob-make-lens 'points))
-(define field-radius-lens (ob-make-lens 'radius))
-
 
 
 ; (pos nat fn that returns true if a pos blocks a ray) -> (pos ...)
