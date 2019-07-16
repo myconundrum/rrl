@@ -73,22 +73,19 @@
 ;; (world event) -> world
 ;;
 
-(define (ui-set-action w action target)
-  (obset w 'actors
-         (pl-set (obget w 'actors)
-                 (action-enqueue (world-player w) action target))))
+
 
 (define (ui-handle-input w e)
-  (define p (world-player w))
+  (define p (world-player-pos w))
   (define new-world  
     (cond
       [(key-event? e)
        (case (send e get-key-code)
-         [(#\a left) (ui-set-action w 'action-move (pos-delta (obget p 'pos) -1 0))]
-         [(#\d right) (ui-set-action w 'action-move (pos-delta (obget p 'pos) 1 0))]
-         [(#\s down)(ui-set-action w 'action-move (pos-delta (obget p 'pos) 0 1)) ]
-         [(#\w up) (ui-set-action w 'action-move (pos-delta (obget p 'pos) 0 -1))]
-         [(#\b) (action-player-look-at w)]
+         [(#\a left) (action-enqueue w 'action-move p (pos-delta p -1 0))]
+         [(#\d right) (action-enqueue w 'action-move p (pos-delta p 1 0))]
+         [(#\s down)(action-enqueue w 'action-move p (pos-delta p 0 1)) ]
+         [(#\w up) (action-enqueue w 'action-move p (pos-delta p 0 -1))]
+         [(#\b) (action-enqueue w 'action-look-at p 0)]
          [(escape #\q) #f]
          [else w])]
       [(eq? 'close w) #f]

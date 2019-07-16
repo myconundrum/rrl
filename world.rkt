@@ -2,7 +2,7 @@
 
 ; world is the set of terrain, entities, items that a player explores.
 
-(require lens unstable/lens racket/random threading
+(require lens racket/random threading
          "object.rkt" "pos.rkt" "config.rkt" "dungeon.rkt" "poslist.rkt")
 
 (provide make-world
@@ -17,7 +17,8 @@
          ; is a given pos valid in this world?
          world-valid-pos?
          ; check if an object is in the given object list.
-
+         
+         
 
          ; base accessors
          world-player-pos
@@ -26,9 +27,23 @@
          world-items
          world-explored
          world-unexplored
-         world-time)
+         world-time
+         
+         world-player-lens
+         world-actors-lens
+         world-items-lens
+         world-actor-lens
+         world-item-lens
+
+)
 
 
+(define world-actors-lens (hash-ref-lens 'actors))
+(define world-items-lens (hash-ref-lens 'items))
+
+(define (world-actor-lens p) (hash-ref-nested-lens 'actors p))
+(define (world-item-lens p) (hash-ref-nested-lens 'items p))
+(define (world-player-lens w) (hash-ref-nested-lens 'actors (obget w 'player-pos)))
 
 (define (world-actors w) (obget w 'actors))
 (define (world-items w) (obget w 'items))

@@ -19,5 +19,6 @@
 (define ob-templates (with-input-from-file "objects.db" (λ () (read-json))))
 
 (define (ob type #:pos [at (pos 0 0)] . more-kv)
-  (hash-union (apply hash (append (list 'pos at) more-kv))
+  (hash-union (apply hash (append 
+                           (list 'pos at) more-kv))
               (hash-ref ob-templates type)))
