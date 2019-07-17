@@ -9,9 +9,10 @@
 (provide field-has-pos?
          field-get-pos
          field-get-points
+         field-recast
          make-field)
 
-(require lens "pos.rkt" "object.rkt")
+(require lens racket/hash  "pos.rkt" "object.rkt")
 
 ;  Draw a line from x1,y1 to x2,y2 using Bresenham's. 
 ; Adapted from http://rosettacode.org/wiki/Bitmap/Bresenham's_line_algorithm#Clojure
@@ -90,9 +91,23 @@
   (let ([diff (- p1 p0)])
     (/ 1 (sqrt (+ 1 (expt (pos-x diff) 2) (expt (pos-y diff) 2))))))
 
+(define (field-decay f d)
+  (define (decay-points pts newpts hpos)
+    (if (not hpos) newpts
+        (let-values ([(k v) (hash-iterate-key+value pts hpos)])
+          (decay-points pts 
+                        (if (> 0.01 (* v d)) newpts (hash-set newpts k (* v d))) 
+                        (hash-iterate-next pts hpos)))))
+
+  (hash-set f 'points 
+            (decay-points 
+             (hash-ref f 'points) 
+             (hash) 
+             (hash-iterate-first (hash-ref  f 'points)))))
+
 ;(pos '(pos ...)) -> #hash of (pos . weight)
 (define (weight-points p0 points)
-  (make-hash (map (λ (p1) (cons p1 (weight-point p0 p1))) points)))
+  (make-immutable-hash (map (λ (p1) (cons p1 (weight-point p0 p1))) points)))
 
 ;(field pos) -> bool
 (define (field-has-pos? f p) (hash-ref (obget f 'points) p #f))
@@ -110,10 +125,21 @@
 
 ; (pos nat blocks-rayfn) -> field
 (define (cast-field origin radius blocks-ray?)
-  (flatten (map (λ (ray) (until-blocked ray blocks-ray?)) (get-field-rays origin radius))))
+  (flatten (map (λ (ray) (until-blocked ray blocks-ray?)) 
+                (get-field-rays origin radius))))
 
+
+(define (field-recast f decay origin radius [blocks-ray? (λ (x) #f)])
+  (define nf (make-field origin radius blocks-ray?))
+  (hash-set nf 'points
+            (hash-union (hash-ref nf 'points)
+                        (hash-ref (field-decay f decay) 'points) 
+                        #:combine/key (λ (k a b) a))))
 
 ; (pos nat fn that returns true if a pos blocks a ray) -> (pos ...)
-(define (make-field origin radius blocks-ray?) 
+(define (make-field origin radius [blocks-ray? (λ (x) #f)]) 
   (ob 'meta #:pos origin 'radius radius
       'points (weight-points origin (cast-field origin radius blocks-ray?))))
+
+
+ 

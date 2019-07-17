@@ -8,13 +8,16 @@
          obget
          obset
          obclear
-         obhas?)
+         obhas?
+         obflip-flag)
 
 
 (define (obget o a [d #f]) (hash-ref o a d))
 (define (obset o . kv) (apply hash-set* o kv))
 (define (obclear o a) (hash-remove o a))
 (define (obhas? o a) (hash-ref o a #f))
+(define (obflip-flag o f) (if (obhas? o f) (hash-remove o f) (hash-set o f #t)))
+
 
 (define ob-templates (with-input-from-file "objects.db" (λ () (read-json))))
 

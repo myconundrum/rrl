@@ -2,7 +2,7 @@
 
 ; world is the set of terrain, entities, items that a player explores.
 
-(require lens racket/random threading
+(require lens/applicable racket/random threading
          "object.rkt" "pos.rkt" "config.rkt" "dungeon.rkt" "poslist.rkt")
 
 (provide make-world
@@ -17,8 +17,6 @@
          ; is a given pos valid in this world?
          world-valid-pos?
          ; check if an object is in the given object list.
-         
-         
 
          ; base accessors
          world-player-pos
@@ -69,6 +67,7 @@
 ; given a list of points, explore these points and return a new world
 ; (world list) -> world
 (define (world-explore w l)
+
   (obset w 'explored (foldl (λ (p pl) 
                               (pl-set pl 
                                       (ob (if (dungeon-pos-open? 

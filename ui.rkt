@@ -3,7 +3,7 @@
 (provide ui-handle-input
          ui-draw-world)
 
-(require lens lux lux/chaos/gui lux/chaos/gui/key racket/draw racket/string
+(require lens/applicable lux lux/chaos/gui lux/chaos/gui/key racket/draw racket/string
          "poslist.rkt" "actions.rkt" "world.rkt" "config.rkt" 
          "object.rkt" "pos.rkt" "field.rkt")
 
@@ -45,10 +45,11 @@
   (send dc set-origin (+ (* 2 pixel-pad) (- width msg-width )) pixel-pad)
   (send dc set-text-background ui-bg)
   (send dc set-text-foreground "gold")
-  (send dc draw-text (format "Gold: ~a Loc (~a,~a)"
+  (send dc draw-text (format "Gold: ~a Loc (~a,~a) Turn (~a)"
                              (obget (world-player w) 'gold)
                              (pos-x (world-player-pos w))
-                             (pos-y (world-player-pos w))) 0 0)
+                             (pos-y (world-player-pos w))
+                             (quotient (world-time w) 100)) 0 0)
 
   (send dc draw-text (format "objects in fov: ~a"
                              (obget (world-player w) 'objects-in-fov)) 0 40
@@ -73,10 +74,13 @@
 ;; (world event) -> world
 ;;
 
-
+(define (debug-presence-view w)
+  (define p (world-player-lens w))
+  (lens-set p w (obflip-flag (p w) 'debug-show-presence)))
 
 (define (ui-handle-input w e)
   (define p (world-player-pos w))
+  
   (define new-world  
     (cond
       [(key-event? e)
@@ -85,6 +89,7 @@
          [(#\d right) (action-enqueue w 'action-move p (pos-delta p 1 0))]
          [(#\s down)(action-enqueue w 'action-move p (pos-delta p 0 1)) ]
          [(#\w up) (action-enqueue w 'action-move p (pos-delta p 0 -1))]
+         [(#\p) (debug-presence-view w)]
          [(#\b) (action-enqueue w 'action-look-at p 0)]
          [(escape #\q) #f]
          [else w])]
@@ -120,6 +125,17 @@
     (when o (ui-draw-object dc o p #t))))
 
 
+(define (ui-draw-presence dc w)
+  (when (obhas? (world-player w) 'presence)
+    (hash-for-each
+     ((hash-ref-nested-lens 'actors (world-player-pos w) 'presence 'points) w) 
+     (λ (p w) 
+       (ui-draw-tile dc 
+                     (* text-size (pos-x p)) 
+                     (* text-size (pos-y p))
+                     "red"
+                     (max 0.1 w))))))
+
 (define (ui-draw-terrain dc w)
   (hash-for-each 
    (obget w 'explored) 
@@ -141,11 +157,12 @@
 
 
 (define (ui-draw-look-at dc w width height)
-  
   (define p (world-player w))
   (define look-pos (if (= -1 (obget p 'look-at-index)) 
-                       #f (list-ref (obget p 'objects-in-fov) 
-                                    (obget p 'look-at-index))))
+                       #f (list-ref 
+                           (obget p 'objects-in-fov) 
+                           (min (obget p 'look-at-index)   
+                                (sub1 (length (obget p 'objects-in-fov)))))))
 
   (when look-pos
     (let* ([o (pl-get (world-actors w) look-pos)]
@@ -187,6 +204,8 @@
   (ui-draw-terrain dc w)
   (ui-draw-items dc w)
   (ui-draw-actors dc w)
+  
+  (when (obhas? p 'debug-show-presence) (ui-draw-presence dc w))
 
 
   

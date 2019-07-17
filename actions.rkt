@@ -16,42 +16,46 @@
 ; tiles we have now seen.
 ; (world) -> (world)
 ;
-
 (define (update-player-fov w)
-  (define f (make-field (world-player-pos w) 3 
+  (define f (make-field (world-player-pos w) (obget (world-player w) 'light)
                         (λ (p) (not (hash-ref (obget w 'unexplored) p #f)))))
   (define o-list
     (foldl (λ (p rl) (if (field-has-pos? f p) (cons p rl) rl)) empty 
            (append (pl-all-pos (world-actors w)) (pl-all-pos (world-items w)))))
-    
-  (lens-transform (world-player-lens w) w 
-                  (λ (o) (obset o 
-                                'look-at-index -1
-                                'fov f
-                                'objects-in-fov o-list))))
+  (define nw  (lens-transform (world-player-lens w) w 
+                              (λ (o) (obset o 
+                                            'fov f
+                                            'objects-in-fov o-list))))
+  (world-explore nw (field-get-points (obget (world-player nw) 'fov))))
+
+
+(define (update-player-presence w)
+  (define p (world-player-lens w))
+  (define of (hash-ref (p w) 'presence #f))
+  (define origin (hash-ref (p w) 'pos))
+  (define radius (hash-ref (p w) 'stealth))
+
+  (lens-set p w (hash-set (p w) 'presence (if of 
+                                              (field-recast of .9 origin radius)
+                                              (make-field origin radius)))))
+
 
 (define (action-player-look-at w apos tpos act)
-  (action-dequeue 
-   (lens-transform 
-    (hash-ref-nested-lens 'actors (world-player-pos w) 'look-at-index) w 
-    (λ (v) (modulo (add1 v) 
-                   (length (lens-view 
-                            (hash-ref-nested-lens 
-                             'actors (world-player-pos w) 'objects-in-fov) w))))) apos))
+  (lens-transform 
+   (hash-ref-nested-lens 'actors (world-player-pos w) 'look-at-index) w 
+   (λ (v) 
+     (modulo (add1 v) 
+             (length ((hash-ref-nested-lens 'actors apos 'objects-in-fov) w))))))
 
-(define (action-attack w apos tpos act)
-  (action-dequeue w apos))
+(define (action-attack w apos tpos act) w)
 
 
-(define (action-player-look w)
+(define (action-player-look w) w
   (define new-fov (update-player-fov w))
   (obset (world-explore new-fov (field-get-points 
                                  (obget (world-player new-fov) 'fov)))))
 
-(define (action-look w apos tpos act)
-  (define new-world 
-    (if (= (world-player-pos w) apos) (action-player-look w) w))
-  (action-dequeue new-world apos))
+(define (action-look w apos tpos act) w)
 
 
 
@@ -59,13 +63,12 @@
 
 (define (action-pickup w apos tpos act)
   (define o (pl-get (world-items w) (obget act 'target-pos)))
-  (define nw 
-    (if (and o (obhas? o 'flag-treasure))
-        (~> (lens-transform 
-             (hash-ref-nested-lens 'actors apos 'gold) w
-             (λ (v) (+ v (lens-view (hash-ref-nested-lens 'items tpos 'gold) w ))))
-            (lens-transform (hash-ref-lens 'items) _ (λ (h) (hash-remove h tpos)))) w))
-  (action-dequeue nw apos))
+  (if (and o (obhas? o 'flag-treasure))
+      (~> 
+       (lens-transform 
+        (hash-ref-nested-lens 'actors apos 'gold) w
+        (λ (v) (+ v ((hash-ref-nested-lens 'items tpos 'gold) w))))
+       (lens-transform (hash-ref-lens 'items) _ (λ (h) (hash-remove h tpos)))) w))
 
 
 (define (action-move w apos tpos act)
@@ -79,8 +82,7 @@
     ; is the player.)
     [(and (pl-pos? (world-actors w) tposc) 
           (or (= apos player-pos) (= tposc player-pos)))
-
-     (action-enqueue (action-dequeue w apos) 'action-attack apos tposc)]
+     (action-enqueue w 'action-attack apos tposc)]
 
     [(and (world-valid-pos? w tposc) 
           (obhas? (pl-get (world-explored w) tposc) 'flag-passable))
@@ -88,13 +90,11 @@
          (lens-transform 
           world-actors-lens _ 
           (λ (h) (hash-set (hash-remove h apos) tposc (obset actor 'pos tposc))))
-         (action-dequeue tposc)
          (action-enqueue 'action-pickup tposc tposc)
-         (action-enqueue 'action-look tposc tposc)
          (obset 'player-pos (if (= apos player-pos) tposc apos)))] ;update player pos
 
     ; else, invalid...remove action.
-    [else (action-dequeue w apos)]))
+    [else w]))
 
 
 
@@ -116,8 +116,11 @@
                          (if (pos? a) a (obget a 'pos)) 
                          'actions) w rest))
 
+
+
+
 (define (action-enqueue w act apos tpos)
-  (define action (obset (ob act)
+  (define action (obset (ob act) 
                         'actor-pos apos
                         'target-pos tpos
                         'fn (hash-ref action-mapping act)))
@@ -129,15 +132,37 @@
                            (append (obget a 'actions empty) (list action))))))
 
 
+(define (get-action-time w act apos)
+  (+ (world-time w) (* (obget act 'speed) 
+                       ((hash-ref-nested-lens 'actors apos 'speed) w))))
+
+(define (run-one-action w a)
+
+  (define apos (obget a 'actor-pos))
+  (define tpos (obget a 'target-pos))
+  (define atime (get-action-time w a apos))
+
+  (~> ((obget a 'fn) (action-dequeue w apos) apos tpos a)
+      (lens-transform (hash-ref-lens 'time) _ 
+                      (λ (v) (if (< v atime) atime v)))))
+
+
+
+
+
+
+
 ;
 ; only the player right now..
 ;
 (define (action-update w)
   (define actions (obget (world-player w) 'actions))
-  (if (or (not actions) (null? actions)) w
-      (let ([a (first actions)])
-        (action-update 
-         ((obget a 'fn) w (obget a 'actor-pos) (obget a 'target-pos) a))))) 
+  (if (or (not actions) (null? actions))
+      ; After all actions have been run, update final state.
+      (~> w
+          (update-player-fov)
+          (update-player-presence))
+      (action-update (run-one-action w (first actions))))) 
 
     
 

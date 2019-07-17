@@ -8,7 +8,6 @@
 
   #:methods gen:word
   [
-
    (define (word-fps w) 0.0)
    (define (word-label w framerate) "Racket RL")
    (define (word-event w e) 

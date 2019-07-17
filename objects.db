@@ -3,28 +3,33 @@
 
 "action-move": {
                "success-msg" : "%ANAME moved to %POS.",
-               "fail-msg" : "%ANAME attempted to move to %POS, but failed."
+               "fail-msg" : "%ANAME attempted to move to %POS, but failed.",
+               "speed" : 100
 
 
 },
 "action-attack": {
                "success-msg" : "%ANAME attacks %TNAME.",
-               "fail-msg" : "%ANAME attempted to attack %TNAME, but failed."
+               "fail-msg" : "%ANAME attempted to attack %TNAME, but failed.",
+               "speed" : 100
 
 
 },
 "action-look": {
-               "unused" : "unused"
+               "unused" : "unused",
+               "speed" : 0
 
 
 },
 "action-look-at": {
-               "unused" : "unused"
+               "unused" : "unused",
+               "speed" : 0
 
 
 },
 "action-pickup": {
-                 "unused" : "unused"               
+                 "unused" : "unused",
+                 "speed" : 0                
 },
 "orc": {
        "look-desc" : "an evil orc",
@@ -33,7 +38,8 @@
        "flag-actor" : true,
        "gold" : 0, 
        "hp" : 100,
-       "maxhp" : 100
+       "maxhp" : 100,
+       "speed" : 1
         },
 "player": {
        "look-desc" : "an intrepid adventurer",
@@ -42,7 +48,11 @@
        "flag-actor" : true,
        "gold" : 0, 
        "hp" : 100,
-       "maxhp" : 100
+       "maxhp" : 100,
+       "speed" : 0.5,
+       "light" : 4,
+       "stealth" : 5,
+       "look-at-index" : -1
         },
 "gold": {
        "look-desc" : "a pile of gold",
