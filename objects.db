@@ -15,6 +15,12 @@
 
 
 },
+"action-sleep": {
+               "success-msg" : "%ANAME sleeps.",
+               "speed" : 100
+
+
+},
 "action-look": {
                "unused" : "unused",
                "speed" : 0

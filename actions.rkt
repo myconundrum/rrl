@@ -5,11 +5,12 @@
          action-enqueue
          action-dequeue
          action-update
+         action-cancel-modes
 
 )
 
-(require lens threading 
-         "poslist.rkt" "pos.rkt" "field.rkt" "world.rkt" "object.rkt" "player.rkt")
+(require threading 
+         "pos.rkt" "field.rkt" "world.rkt" "object.rkt" "player.rkt")
 
 ;
 ; cast a field of view at the current player position and then explore those 
@@ -17,85 +18,66 @@
 ; (world) -> (world)
 ;
 (define (update-player-fov w)
-  (define f (make-field (world-player-pos w) (obget (world-player w) 'light)
+  (define f (make-field (world-player-pos w) (world-player-attribute w 'light)
                         (λ (p) (not (hash-ref (obget w 'unexplored) p #f)))))
   (define o-list
     (foldl (λ (p rl) (if (field-has-pos? f p) (cons p rl) rl)) empty 
-           (append (pl-all-pos (world-actors w)) (pl-all-pos (world-items w)))))
-  (define nw  (lens-transform (world-player-lens w) w 
-                              (λ (o) (obset o 
+           (append (hash-keys (world-actors w)) (hash-keys (world-items w)))))
+  (define nw (world-player-transform w (λ (o) (obset o 
                                             'fov f
                                             'objects-in-fov o-list))))
-  (world-explore nw (field-get-points (obget (world-player nw) 'fov))))
-
+  (world-explore nw (field-get-points (world-player-attribute nw 'fov))))
 
 (define (update-player-presence w)
-  (define p (world-player-lens w))
-  (define of (hash-ref (p w) 'presence #f))
-  (define origin (hash-ref (p w) 'pos))
-  (define radius (hash-ref (p w) 'stealth))
-
-  (lens-set p w (hash-set (p w) 'presence (if of 
-                                              (field-recast of .9 origin radius)
-                                              (make-field origin radius)))))
+  (world-player-transform-attribute 
+   w 'presence (λ (o v) (if v 
+                            (field-recast v .9 (obget o 'pos) (obget o 'stealth))
+                            (make-field (obget o 'pos) (obget o 'stealth))))))
 
 
 (define (action-player-look-at w apos tpos act)
-  (lens-transform 
-   (hash-ref-nested-lens 'actors (world-player-pos w) 'look-at-index) w 
-   (λ (v) 
-     (modulo (add1 v) 
-             (length ((hash-ref-nested-lens 'actors apos 'objects-in-fov) w))))))
+  (world-player-transform-attribute 
+   w 'look-at-index 
+   (λ (o v) (modulo (add1 v) (length (obget o 'objects-in-fov))))))
+
+(define (action-cancel-modes w)
+  (world-player-set-attribute w 'look-at-index -1))
 
 (define (action-attack w apos tpos act) w)
 
 
 (define (action-player-look w) w
   (define new-fov (update-player-fov w))
-  (obset (world-explore new-fov (field-get-points 
-                                 (obget (world-player new-fov) 'fov)))))
+  (world-explore new-fov (field-get-points 
+                          (world-player-attribute new-fov 'fov))))
 
 (define (action-look w apos tpos act) w)
-
-
-
+(define (action-sleep w apos tpos act) w)
 
 
 (define (action-pickup w apos tpos act)
-  (define o (pl-get (world-items w) (obget act 'target-pos)))
-  (if (and o (obhas? o 'flag-treasure))
-      (~> 
-       (lens-transform 
-        (hash-ref-nested-lens 'actors apos 'gold) w
-        (λ (v) (+ v ((hash-ref-nested-lens 'items tpos 'gold) w))))
-       (lens-transform (hash-ref-lens 'items) _ (λ (h) (hash-remove h tpos)))) w))
+  (define t (world-item w tpos))
+  (if (and t (obhas? t 'flag-treasure))
+      (world-item-delete 
+       (world-actor-transform-attribute 
+        w apos 'gold (λ (o v) (+ v (obget t 'gold)))) tpos)
+      w))
 
 
 (define (action-move w apos tpos act)
   (define tposc (pos-clamp tpos 
-                        0 (obget w 'width) 0 (obget w 'height)))
+                           0 (hash-ref w 'width) 0 (hash-ref w 'height)))
   (define player-pos (world-player-pos w))
-  (define actor (pl-get (world-actors w) apos))
  
   (cond
     ; should this be an attack instead? (to contains an actor and one of from or to
     ; is the player.)
-    [(and (pl-pos? (world-actors w) tposc) 
-          (or (= apos player-pos) (= tposc player-pos)))
+    [(and (world-actor-at? w tposc) (or (= apos player-pos) (= tposc player-pos)))
      (action-enqueue w 'action-attack apos tposc)]
-
-    [(and (world-valid-pos? w tposc) 
-          (obhas? (pl-get (world-explored w) tposc) 'flag-passable))
-     (~> w
-         (lens-transform 
-          world-actors-lens _ 
-          (λ (h) (hash-set (hash-remove h apos) tposc (obset actor 'pos tposc))))
-         (action-enqueue 'action-pickup tposc tposc)
-         (obset 'player-pos (if (= apos player-pos) tposc apos)))] ;update player pos
-
-    ; else, invalid...remove action.
+    [(and (world-valid-pos? w tposc) (obhas? (world-terrain w tposc) 'flag-passable))
+     (action-enqueue (world-actor-set-attribute w apos 'pos tposc) 
+                     'action-pickup tposc tposc)]
     [else w]))
-
 
 
 
@@ -106,18 +88,13 @@
    'action-look-at action-player-look-at
    'action-attack action-attack
    'action-pickup action-pickup
-   'action-look action-look))
+   'action-look action-look
+   'action-sleep action-sleep))
 
 (define (action-do-nothing w apos tpos act) (action-dequeue w apos))
 
 (define (action-dequeue w a) 
-  (lens-transform 
-   (hash-ref-nested-lens 'actors 
-                         (if (pos? a) a (obget a 'pos)) 
-                         'actions) w rest))
-
-
-
+  (world-actor-transform-attribute w a 'actions (λ (o v) (rest v))))
 
 (define (action-enqueue w act apos tpos)
   (define action (obset (ob act) 
@@ -125,31 +102,22 @@
                         'target-pos tpos
                         'fn (hash-ref action-mapping act)))
 
-  
-  (lens-transform (hash-ref-nested-lens 'actors apos)  w  
-                  (λ (a) 
-                    (obset a 'actions 
-                           (append (obget a 'actions empty) (list action))))))
-
+  (world-actor-transform-attribute 
+   w apos 'actions (λ (o v) (append (obget o 'actions empty) (list action)))))
 
 (define (get-action-time w act apos)
   (+ (world-time w) (* (obget act 'speed) 
-                       ((hash-ref-nested-lens 'actors apos 'speed) w))))
+                       (obget (world-actor w apos) 'speed))))
 
 (define (run-one-action w a)
 
   (define apos (obget a 'actor-pos))
   (define tpos (obget a 'target-pos))
   (define atime (get-action-time w a apos))
+  (define curtime (obget w 'time))
 
   (~> ((obget a 'fn) (action-dequeue w apos) apos tpos a)
-      (lens-transform (hash-ref-lens 'time) _ 
-                      (λ (v) (if (< v atime) atime v)))))
-
-
-
-
-
+      (obset 'time (if (< curtime atime) atime curtime))))
 
 
 ;
