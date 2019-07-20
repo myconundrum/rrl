@@ -112,7 +112,7 @@
 ;(field pos) -> bool
 (define (field-has-pos? f p) (hash-ref (obget f 'points) p #f))
 ;(field pos) -> pos
-(define (field-get-pos f p) (hash-ref (obget f 'points) p #f))
+(define (field-get-pos f p) (hash-ref (obget f 'points) p 0))
 
 (define (field-get-points f) (hash-keys (obget f 'points)))
 
