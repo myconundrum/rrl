@@ -22,16 +22,14 @@
     (foldl (λ (p rl) (if (field-has-pos? f p) (cons p rl) rl)) empty 
            (append (hash-keys (world-actors w)) (hash-keys (world-items w)))))
   (define nw (world-player-transform w (λ (o) (obset o 
-                                            'fov f
-                                            'objects-in-fov o-list))))
+                                                     'fov f
+                                                     'objects-in-fov o-list))))
   (world-explore nw (field-get-points (world-player-attribute nw 'fov))))
 
 (define (update-player-presence w)
   (world-player-transform-attribute 
-   w 'presence (λ (o v) (if v 
-                            (field-recast v .9 (obget o 'pos) (obget o 'stealth))
+   w 'presence (λ (o v) (if v (field-recast v .9 (obget o 'pos) (obget o 'stealth))
                             (make-field (obget o 'pos) (obget o 'stealth))))))
-
 
 (define (action-player-look-at w apos tpos act)
   (world-player-transform-attribute 
@@ -41,26 +39,20 @@
 (define (action-cancel-modes w)
   (world-player-set-attribute w 'look-at-index -1))
 
-(define (action-attack w apos tpos act) w)
-
 
 (define (action-player-look w) w
   (define new-fov (update-player-presence (update-player-fov w)))
   (world-explore new-fov (field-get-points 
                           (world-player-attribute new-fov 'fov))))
 
+(define (action-attack w apos tpos act) w)
 (define (action-look w apos tpos act) w)
 (define (action-sleep w apos tpos act) w)
-
-
 (define (action-pickup w apos tpos act)
   (define t (world-item w tpos))
   (if (and t (obhas? t 'flag-treasure))
-      (world-item-delete 
-       (world-actor-transform-attribute 
-        w apos 'gold (λ (o v) (+ v (obget t 'gold)))) tpos)
-      w))
-
+      (world-item-delete (world-actor-transform-attribute 
+                          w apos 'gold (λ (o v) (+ v (obget t 'gold)))) tpos) w))
 
 (define (action-move w apos tpos act)
   (define tposc (pos-clamp tpos 
@@ -72,7 +64,9 @@
     ; is the player.)
     [(and (world-actor-at? w tposc) (or (= apos player-pos) (= tposc player-pos)))
      (action-enqueue w 'action-attack apos tposc)]
+    ; if this isn't attack, don't allow a move onto another actor.
     [(world-actor-at? w tposc) w]
+    ; move if its a valid position...
     [(and (world-valid-pos? w tposc) (obhas? (world-terrain w tposc) 'flag-passable))
      (action-enqueue (world-actor-set-attribute w apos 'pos tposc) 
                      'action-pickup tposc tposc)]
@@ -86,8 +80,6 @@
    'action-pickup action-pickup
    'action-look action-look
    'action-sleep action-sleep))
-
-(define (action-do-nothing w apos tpos act) (action-dequeue w apos))
 
 (define (action-dequeue w a) 
   (world-actor-transform-attribute w a 'actions (λ (o v) (rest v))))
@@ -103,51 +95,23 @@
    w apos 'actions (λ (o v) (append (obget o 'actions empty) (list action)))))
 
 (define (get-action-time w act apos)
-  (+ (obget act 'timestamp) (* (obget act 'speed) 
-                               (obget (world-actor w apos) 'speed))))
+  (+ (obget act 'timestamp) (* (obget act 'speed) (obget (world-actor w apos) 'speed))))
 
 (define (run-one-action w a)
-
   (define apos (obget a 'actor-pos))
   (define tpos (obget a 'target-pos))
   (define atime (get-action-time w a apos))
   (define curtime (obget w 'time))
 
-  
-
   (~> ((obget a 'fn) (action-dequeue w apos) apos tpos a)
       (obset 'time (if (< curtime atime) atime curtime))))
 
-
-
-
-
-
-
-;
-; only the player right now..
-;
-(define (action-update-old w)
-  (define player-actions (obget (world-player w) 'actions))
- 
-  (if (or (not player-actions) (null? player-actions))
-      ; After all actions have been run, update final state.
-      (~> w
-          (update-player-fov)
-          (update-player-presence))
-      (action-update (run-one-action w (first player-actions))))) 
-
-(define ai-candidate-moves (list 0-1i 0+1i 1 -1 1+1i 1-1i -1+1i -1-1i))
-
 (define (ai-best-move w apos)
   (define presence (world-player-attribute w 'presence))
-  (foldl (λ (p m) (if (and (field-has-pos? presence (+ p apos))
-                           (> (field-get-pos presence (+ p apos)) 
-                              (field-get-pos presence m)))
-                      (+ p apos) m))
-         apos ai-candidate-moves))
-
-
+  (define moves (list 0 0-1i 0+1i 1 -1 1+1i 1-1i -1+1i -1-1i))
+  (+ apos (first (sort moves > #:key (λ (v) (if (field-has-pos? presence (+ v apos)) 
+                                                (field-get-pos presence (+ v apos)) 0))
+                       #:cache-keys? #t))))
 
 (define (ai-state-searching w apos)
   (define tpos (ai-best-move w apos))
@@ -160,68 +124,41 @@
 (define (ai-state-asleep w apos)
   ; far too simple. If detect player, move to ai-searching. Otherwise, sleep.
   (if (field-has-pos? (world-player-attribute w 'presence) apos)
-      (let ([nw 
-             (action-enqueue 
-              (world-actor-set-attribute w apos 'state 'state-searching) 
-              'action-move apos (ai-best-move w apos))])
-        nw)
-      (action-enqueue
-       (world-actor-set-attribute w apos 'state 'state-asleep) 'action-sleep apos apos)))
+      (action-enqueue (world-actor-set-attribute w apos 'state 'state-searching) 
+                      'action-move apos (ai-best-move w apos))
+      (action-enqueue (world-actor-set-attribute w apos 'state 'state-asleep) 
+                      'action-sleep apos apos)))
 
-(define ai-states
-  (hash 
-   'state-asleep ai-state-asleep
-   'state-searching ai-state-searching))
+(define ai-states (hash 
+                   'state-asleep ai-state-asleep
+                   'state-searching ai-state-searching))
 
 (define (ai-decide-action w apos)
-  (define cur-state (world-actor-attribute w apos 'state 'state-asleep))
-  (define act (world-actor-attribute w apos 'actions empty))
-  (if (null? act) ((hash-ref ai-states cur-state) w apos) w))
+  (if (null? (world-actor-attribute w apos 'actions empty)) 
+      ((hash-ref ai-states 
+                 (world-actor-attribute w apos 'state 'state-asleep)) w apos) w))
 
-
-
+(define (get-ai-actors w)
+  (filter (λ (p) (not (= (world-player-pos w) p))) (hash-keys (world-actors w))))
 
 (define (ai-update-actions w)
-  (define ppos (world-player-pos w))
-  (foldl (λ (p nw)
-           (if (= ppos p) nw (ai-decide-action nw p))) w (hash-keys (world-actors w))))
-
-;
-; ba is best-action (shortest amount of time before completion)
-; while (time ba)  < cur-time or player has actions
-;  run best-action
-;  update ai
-;  loop
+  (foldl (λ (p nw) (ai-decide-action nw p)) w (get-ai-actors w)))
 
 (define (get-player-action w)
   (define act (world-player-attribute w 'actions empty))
   (if (null? act) #f (first act)))
 
-
-(define (get-ai-actors w)
-  (filter (λ (p) (not (= (world-player-pos w) p))) (hash-keys (world-actors w))))
-
-
 (define (sorted-ai-actors w)
-
   (sort (get-ai-actors w) <
         #:key (λ (p) (get-action-time w (first (world-actor-attribute w p 'actions)) p))
         #:cache-keys? #t))
 
-
-
 (define (get-next-actor w)
-  (define best-ai (first (sorted-ai-actors w)))
+  (define ai (first (sorted-ai-actors w)))
   (define pa (get-player-action w))
-
-  (cond
-    [(not pa)  best-ai]
-    [(< (get-action-time w (first (world-actor-attribute w best-ai 'actions)) best-ai)
-        (get-action-time w pa (world-player-pos w))) best-ai]
-    [else (world-player-pos w)]))
-
-
-
+  (if (or (not pa) 
+          (< (get-action-time w (first (world-actor-attribute w ai 'actions)) ai)
+             (get-action-time w pa (world-player-pos w))))  ai (world-player-pos w)))
 
 (define (action-update w)
   (define player-action (get-player-action w))
@@ -235,8 +172,3 @@
       ; finish up player-updates after all actions.
       (update-player-presence (update-player-fov new-world))))
 
-(define (action-tester)
-
-  (ai-update-actions (action-player-look (make-world)))
-
-)
