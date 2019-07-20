@@ -136,8 +136,9 @@
 (define (ui-draw-terrain dc w)
   (hash-for-each 
    (obget w 'explored) 
-   (λ (p o) (ui-draw-object dc o p (field-has-pos?
-                                    (obget (world-player w) 'fov) p)))))
+   (λ (p v) (ui-draw-object dc 
+                            (world-terrain w p) p 
+                            (field-has-pos? (obget (world-player w) 'fov) p)))))
 
 ;
 ; '(<color> <string> ...) 

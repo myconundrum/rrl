@@ -5,9 +5,7 @@
          action-enqueue
          action-dequeue
          action-update
-         action-cancel-modes
-
-)
+         action-cancel-modes)
 
 (require threading 
          "pos.rkt" "field.rkt" "world.rkt" "object.rkt" "player.rkt")
@@ -19,7 +17,7 @@
 ;
 (define (update-player-fov w)
   (define f (make-field (world-player-pos w) (world-player-attribute w 'light)
-                        (λ (p) (not (hash-ref (obget w 'unexplored) p #f)))))
+                        (λ (p) (not (hash-ref (obget w 'terrain) p #f)))))
   (define o-list
     (foldl (λ (p rl) (if (field-has-pos? f p) (cons p rl) rl)) empty 
            (append (hash-keys (world-actors w)) (hash-keys (world-items w)))))
@@ -74,6 +72,7 @@
     ; is the player.)
     [(and (world-actor-at? w tposc) (or (= apos player-pos) (= tposc player-pos)))
      (action-enqueue w 'action-attack apos tposc)]
+    [(world-actor-at? w tposc) w]
     [(and (world-valid-pos? w tposc) (obhas? (world-terrain w tposc) 'flag-passable))
      (action-enqueue (world-actor-set-attribute w apos 'pos tposc) 
                      'action-pickup tposc tposc)]
@@ -114,10 +113,7 @@
   (define atime (get-action-time w a apos))
   (define curtime (obget w 'time))
 
-  (println (format "~a at ~a is running ~a" 
-                   (world-actor-attribute w apos 'rep)
-                   apos
-                   (obget a 'fn)))
+  
 
   (~> ((obget a 'fn) (action-dequeue w apos) apos tpos a)
       (obset 'time (if (< curtime atime) atime curtime))))
@@ -178,10 +174,9 @@
    'state-searching ai-state-searching))
 
 (define (ai-decide-action w apos)
-  
-
   (define cur-state (world-actor-attribute w apos 'state 'state-asleep))
-  ((hash-ref ai-states cur-state) w apos))
+  (define act (world-actor-attribute w apos 'actions empty))
+  (if (null? act) ((hash-ref ai-states cur-state) w apos) w))
 
 
 

@@ -87,7 +87,10 @@
 (define (world-actor-at? w p) (world-object-get w 'actors p))
 (define (world-item-at? w p) (world-object-get w 'items p))
 
-(define (world-terrain w p) (world-object-get w 'explored p))
+(define (world-terrain w p) 
+  (list-ref terrain-templates 
+            (if (world-object-get w 'terrain p #f) floor-template wall-template)))
+
 (define (world-actor w p [def #f]) (world-object-get w 'actors p def))
 (define (world-item w p [def #f]) (world-object-get w 'items p def))
 (define (world-player w) (world-object-get w 'actors (hash-ref w 'player-pos)))
@@ -161,18 +164,16 @@
     (and (>= x 0) (>= y 0) 
          (< x (obget w 'width)) (< y (obget w 'height)))))
 
-; given a list of points, explore these points and return a new world
-; (world list) -> world
+
+
 (define (world-explore w l)
-  (obset w 'explored (foldl (λ (p pl) 
-                              (hash-set pl p 
-                                      (ob (if (dungeon-pos-open? 
-                                               (obget w 'unexplored) p) 
-                                              'floor 'wall) #:pos p)))  
-                            (world-explored w) l)))
+  (if (null? l) w
+      (world-explore 
+       (hash-set w 'explored (hash-set (obget w 'explored) (first l) #t))  (rest l))))
+
 
 (define (world-random-pos w)
-  (define p (dungeon-random-open-pos (obget w 'unexplored)))
+  (define p (random-ref (hash-keys (obget w 'terrain))))
   (if (not (or (world-item w p) (world-actor w p)))
       p (world-random-pos w)))
 
@@ -188,13 +189,18 @@
            (world-actor-set nw p (ob 'orc #:pos p))) 
          w (range 20)))
 
+
+(define floor-template 0)
+(define wall-template 1)
+(define terrain-templates (list (ob 'floor) (ob 'wall)))
+
 (define (make-world)
   (define w (ob 'meta 
                 'player-pos (pos 0 0)
                 'explored (hash)
                 'actors (hash)
                 'items (hash)
-                'unexplored (create-dungeon columns rows max-rooms)
+                'terrain (create-dungeon columns rows max-rooms)
                 'width columns
                 'height rows
                 'time 0))
@@ -203,4 +209,5 @@
       (world-player-set (ob 'player #:pos (world-random-pos w)))
       (gen-treasure)
       (gen-monsters)))
+
 
