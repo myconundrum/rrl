@@ -1,0 +1,3 @@
+[[Sun 21 Jul 2019 7:21:45 PM]]: an intrepid adventurer picked up a pile of gold worth 10 gold.
+[[Sun 21 Jul 2019 7:21:51 PM]]: an intrepid adventurer picked up a pile of gold worth 10 gold.
+[[Sun 21 Jul 2019 7:21:53 PM]]: an intrepid adventurer picked up a pile of gold worth 10 gold.

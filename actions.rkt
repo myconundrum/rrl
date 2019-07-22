@@ -7,8 +7,7 @@
          action-update
          action-cancel-modes)
 
-(require threading 
-         "pos.rkt" "field.rkt" "world.rkt" "object.rkt" "player.rkt")
+(require threading "pos.rkt" "field.rkt" "world.rkt" "object.rkt" "player.rkt" "msg.rkt")
 
 ;
 ; cast a field of view at the current player position and then explore those 
@@ -39,20 +38,24 @@
 (define (action-cancel-modes w)
   (world-player-set-attribute w 'look-at-index -1))
 
-
 (define (action-player-look w) w
   (define new-fov (update-player-presence (update-player-fov w)))
   (world-explore new-fov (field-get-points 
                           (world-player-attribute new-fov 'fov))))
 
 (define (action-attack w apos tpos act) w)
-(define (action-look w apos tpos act) w)
+(define (action-look w apos tpos act) 
+  (if (= apos (world-player-pos w)) (action-player-look w) w))
+
 (define (action-sleep w apos tpos act) w)
 (define (action-pickup w apos tpos act)
   (define t (world-item w tpos))
   (if (and t (obhas? t 'flag-treasure))
-      (world-item-delete (world-actor-transform-attribute 
-                          w apos 'gold (λ (o v) (+ v (obget t 'gold)))) tpos) w))
+      (~> w 
+          (world-actor-transform-attribute apos 'gold (λ (o v) (+ v (obget t 'gold))))
+          (world-item-delete tpos)
+          (msg-queue (msg w (world-actor w apos) t 
+                          "%actor:look-desc picked up %color:target %target:look-desc %color:white worth %target:gold gold."))) w ))
 
 (define (action-move w apos tpos act)
   (define tposc (pos-clamp tpos 
@@ -67,9 +70,9 @@
     ; if this isn't attack, don't allow a move onto another actor.
     [(world-actor-at? w tposc) w]
     ; move if its a valid position...
-    [(and (world-valid-pos? w tposc) (obhas? (world-terrain w tposc) 'flag-passable))
-     (action-enqueue (world-actor-set-attribute w apos 'pos tposc) 
-                     'action-pickup tposc tposc)]
+    [(world-passable? w tposc) (action-enqueue 
+                                (world-actor-set-attribute w apos 'pos tposc) 
+                                'action-pickup tposc tposc)]
     [else w]))
 
 (define action-mapping 

@@ -6,20 +6,21 @@
 
 (provide make-world
          
-         ; given a list of points (from a field of view of some sort typically)
-         ; explore those points from the unexplored terrain turning them into
-         ; real explored tiles
+
+         ; Mark list of tiles as explored.
          world-explore
+
          ; is a given pos valid in this world?
          world-valid-pos?
-         ; check if an object is in the given object list.
+         ; valid and passable?
+         world-passable?
+
 
          ; base accessors
          world-player-pos
          world-actors
          world-items
          world-explored
-         world-unexplored
          world-time
          
 
@@ -152,7 +153,6 @@
 (define (world-actors w) (hash-ref w 'actors))
 (define (world-items w) (hash-ref w 'items))
 (define (world-explored w) (hash-ref w 'explored))
-(define (world-unexplored w) (hash-ref w 'unexplored))
 (define (world-time w) (hash-ref w 'time))
 (define (world-player-pos w) (hash-ref w 'player-pos))
 
@@ -164,6 +164,8 @@
     (and (>= x 0) (>= y 0) 
          (< x (obget w 'width)) (< y (obget w 'height)))))
 
+(define (world-passable? w p) 
+  (and (world-valid-pos? w p) (obhas? (world-terrain w p) 'flag-passable)))
 
 
 (define (world-explore w l)

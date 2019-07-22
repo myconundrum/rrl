@@ -5,7 +5,7 @@
 
 (require lux lux/chaos/gui lux/chaos/gui/key racket/draw racket/string
          "actions.rkt" "world.rkt" "config.rkt" 
-         "object.rkt" "pos.rkt" "field.rkt")
+         "object.rkt" "pos.rkt" "field.rkt" "msg.rkt")
 
 (define pixel-pad 3) ; extra padding beyond text-size between windows.
 (define msg-width (+ (* 2  pixel-pad) (* 20 text-size)))
@@ -40,7 +40,49 @@
   (ui-fuel-gauge dc (+ 5 (ui-get-string-width dc s)) 2 
                  (* text-size 10) text-size ratio c))
 
+
+(define (msg->colored-strings m [l (list "white")])
+  (define r (regexp-match-positions #rx"([{][a-z]*[}])" m))
+  (if (not r) (append l (list m))
+      (let ([c (substring m (add1 (car (first r))) (sub1 (cdr (first r))))]
+            [b (substring m 0 (car (first r)))])
+        (msg->colored-strings 
+         (substring m (cdr (first r)))    
+         (append l (list b) (list c))))))
+
+(define (ui-draw-string-wrapped dc x y sx ex str-list)
+  (if (null? str-list) (pos x y) 
+      (let* ([s (format "~a " (first str-list))]
+             [w (ui-get-string-width dc s)]
+             [y2 (if (> (+ w x) ex) (+ text-size y) y)]
+             [x2 (if (> (+ w x) ex) sx x)])
+        
+        (send dc draw-text s x2 y2)
+        (ui-draw-string-wrapped dc (+ x2 w) y2 sx ex (rest str-list)))))
+
+(define (ui-draw-each-colored-string dc x y minx maxx cs)
+  (if (null? cs) y
+      (let ([split-str (string-split (first (rest cs)))])
+        (send dc set-text-foreground (first cs))
+        (let ([p (ui-draw-string-wrapped dc x y minx maxx split-str)]) 
+          (ui-draw-each-colored-string 
+           dc (pos-x p) (pos-y p) minx maxx (rest (rest cs)))))))
+
+(define (ui-draw-msg dc x y maxx  m)
+  (define cs (msg->colored-strings m))
+  (ui-draw-each-colored-string dc x y x maxx cs))
+
+(define (ui-draw-message-list dc x y maxx msgs)
+  (unless (null? msgs)
+    (let ([y2  (ui-draw-msg dc x y maxx (first msgs))])
+      (ui-draw-message-list dc x (+ text-size 3 y2) maxx (rest msgs)))))
+
 (define (ui-draw-message-panel dc w width height)
+  (define msg-list 
+    (map (λ (i) (list-ref (obget w 'messages) 
+                          (modulo (+ i (obget w 'message-index))
+                                  (obget w 'message-count)))) 
+         (range (obget w 'message-count))))
 
   (send dc set-origin (+ (* 2 pixel-pad) (- width msg-width )) pixel-pad)
   (send dc set-text-background ui-bg)
@@ -49,13 +91,9 @@
                              (world-player-attribute w 'gold)
                              (pos-x (world-player-pos w))
                              (pos-y (world-player-pos w))
-                             (quotient (world-time w) 100)) 0 0)
-
-  (send dc draw-text (format "objects in fov: ~a"
-                             (obget (world-player w) 'objects-in-fov)) 0 40
-        
-
-)
+                            (quotient (world-time w) 100)) 0 0)
+  
+  (ui-draw-message-list dc 0 50 msg-width msg-list)
 
   (send dc set-origin 0 0))
 
