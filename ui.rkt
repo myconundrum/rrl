@@ -10,13 +10,13 @@
 (define dungeon-bg "black")
 
 (define (debug-presence-view w)
-  (world-player-transform w (λ (o) (obflip-flag o 'debug-show-presence))))
+  (player-transform w (λ (o) (obflip-flag o 'debug-show-presence))))
 
 (define (graphics-mode-toggle w)
-  (world-player-transform-attribute w 'graphics-mode  (λ (o v) (if (eq? 'text v) 'graphics 'text))))
+  (player-transform-attribute w 'graphics-mode  (λ (o v) (if (eq? 'text v) 'graphics 'text))))
 
 (define (ui-handle-input w e)
-  (define p (world-player-pos w))
+  (define p (player-pos w))
   
   (define new-world  
     (cond
@@ -58,7 +58,7 @@
 (define (make-camera w ctx)
   (define width (quotient (context-width ctx) (context-base-size ctx)))
   (define height (quotient (context-height ctx) (context-base-size ctx)))
-  (camera (pos-delta (world-player-pos w) (- (quotient width 2)) (- (quotient height 2))) 
+  (camera (pos-delta (player-pos w) (- (quotient width 2)) (- (quotient height 2))) 
           width height))
 
 ;; UTILITY FUNCTIONS
@@ -102,7 +102,7 @@
 
 ; get a position being looked at by the player if it exists.
 (define (get-look-at-pos w)
-  (define p (world-player w))
+  (define p (player w))
   (if (= -1 (obget p 'look-at-index)) #f (list-ref (obget p 'objects-in-fov) 
                                                    (min (obget p 'look-at-index)   
                                                         (sub1 (length (obget p 'objects-in-fov)))))))
@@ -128,7 +128,7 @@
 
 (define (draw-object-bitmap dc w ctx o x y)
   (cond 
-    [(= (world-player-pos w) (obget o 'pos))
+    [(= (player-pos w) (obget o 'pos))
      (send dc draw-bitmap (rep->bitmap o) x y)]
     [(obhas? o 'flag-actor) 
      (when (< (obget o 'hp) (obget o 'maxhp))
@@ -176,24 +176,24 @@
 
 ; draw presence field.
 (define (draw-presence dc w ctx cam)
-  (when (and (obhas? (world-player w) 'debug-show-presence) (obhas? (world-player w) 'presence))
-    (hash-for-each (obget (world-player-attribute w 'presence) 'points)
+  (when (and (obhas? (player w) 'debug-show-presence) (obhas? (player w) 'presence))
+    (hash-for-each (obget (player-attribute w 'presence) 'points)
                    (λ (p w) (draw-tile dc ctx cam p "red" (max 0.1 w))))))
 
 (define (draw-items dc w ctx cam)
-  (for ([p (obget (world-player w) 'objects-in-fov)])
-    (define o (obget (world-items w) p))
+  (for ([p (obget (player w) 'objects-in-fov)])
+    (define o (obget (items w) p))
     (when o (draw-object dc w ctx cam o p #t))))
 
 (define (draw-actors dc w ctx cam)
-  (for ([p (obget (world-player w) 'objects-in-fov)])
-    (define o (obget (world-actors w) p))
+  (for ([p (obget (player w) 'objects-in-fov)])
+    (define o (obget (actors w) p))
     (when o (draw-object dc w ctx cam o p #t))))
 
 (define (draw-terrain dc w ctx cam)
   (hash-for-each (obget w 'explored) 
-                 (λ (p v) (draw-object dc w ctx cam (world-terrain w p) p 
-                                       (field-has-pos? (obget (world-player w) 'fov) p)))))
+                 (λ (p v) (draw-object dc w ctx cam (terrain w p) p 
+                                       (field-has-pos? (obget (player w) 'fov) p)))))
 
 (define (draw-game dc w ctx)
   (define cam (make-camera w ctx))
@@ -241,15 +241,15 @@
       (draw-message-list dc x (+ text-size 3 y2) maxx (rest msgs)))))
 
 (define (draw-messages dc w ctx)
-    (set-origin-to-context dc ctx)
+  (set-origin-to-context dc ctx)
   (clear-ui-view dc w ctx)
   
   (send dc set-text-foreground "gold")
   (send dc draw-text (format "Gold: ~a Loc (~a,~a) Turn (~a)"
-                             (world-player-attribute w 'gold)
-                             (pos-x (world-player-pos w))
-                             (pos-y (world-player-pos w))
-                            (quotient (world-time w) 100)) 0 0)
+                             (player-attribute w 'gold)
+                             (pos-x (player-pos w))
+                             (pos-y (player-pos w))
+                            (quotient (game-time w) 100)) 0 0)
   
   (draw-message-list dc 0 50 (context-width ctx) (get-messages w)))
 
@@ -268,9 +268,8 @@
 
 
 (define (draw-hp dc w ctx)
-  (define p (world-player w))
-  (define s (format "Hp: ~a / ~a" 
-                    (obget p 'hp)  (obget p 'maxhp)))
+  (define p (player w))
+  (define s (format "Hp: ~a / ~a" (obget p 'hp)  (obget p 'maxhp)))
   (define c (hp-gauge-color p))
 
   (send dc set-text-foreground c)
@@ -281,8 +280,8 @@
 (define (draw-look-at-message dc w ctx)
   (define look-pos (get-look-at-pos w))
   (when look-pos
-    (let* ([o (world-actor w look-pos)]
-           [o (if o o (world-item w look-pos))])
+    (let* ([o (actor w look-pos)]
+           [o (if o o (item w look-pos))])
       (draw-colorful-strings dc 300 0 "white" 
                              "You see " (obget o 'color) (obget o 'look-desc) "white" "."))))
 (define (draw-status dc w ctx)
@@ -295,7 +294,7 @@
 (define message-width (* 8 bitmap-size))
 
 (define (draw-game-view dc w width height)
-  (define mode (world-player-attribute w 'graphics-mode 'graphics))
+  (define mode (player-attribute w 'graphics-mode 'graphics))
   (define base-size (get-base-size mode))
   (define game-ctx (context mode base-size (pos 0 0) (- width message-width) (- height status-height)))
   (define messages-ctx (context mode base-size 
