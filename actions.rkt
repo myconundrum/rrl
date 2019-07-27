@@ -43,7 +43,17 @@
   (world-explore new-fov (field-get-points 
                           (world-player-attribute new-fov 'fov))))
 
-(define (action-attack w apos tpos act) w)
+
+(define (remove-if-dead w p)
+    (if (and (< (world-actor-attribute w p 'hp) 1) (not (= (world-player-pos w) p)))
+      (world-actor-delete w p) w))
+
+(define (action-attack w apos tpos act) 
+  (if (world-actor w tpos)
+      (~> (world-actor-transform-attribute 
+           w tpos 'hp  (λ (o v) (- v (world-actor-attribute w apos 'attack))))
+          (remove-if-dead tpos)) w))
+
 (define (action-look w apos tpos act) 
   (if (= apos (world-player-pos w)) (action-player-look w) w))
 
@@ -55,7 +65,7 @@
           (world-actor-transform-attribute apos 'gold (λ (o v) (+ v (obget t 'gold))))
           (world-item-delete tpos)
           (msg-queue (msg w (world-actor w apos) t 
-                          "%actor:look-desc picked up %color:target %target:look-desc %color:white worth %target:gold gold."))) w ))
+                          "%color:actor %actor:look-desc %color:white picked up %color:target %target:look-desc %color:white worth %target:gold gold."))) w ))
 
 (define (action-move w apos tpos act)
   (define tposc (pos-clamp tpos 

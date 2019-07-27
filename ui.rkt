@@ -69,7 +69,6 @@
                                                     (obget w 'message-count)))) 
        (range (obget w 'message-count))))
 
-
 ; return the correct base size for the graphics mode
 (define (get-base-size mode) (if (eq? mode 'text) text-size bitmap-size))
 
@@ -108,6 +107,12 @@
                                                    (min (obget p 'look-at-index)   
                                                         (sub1 (length (obget p 'objects-in-fov)))))))
 
+(define (hp-ratio o) (/ (obget o 'hp) (obget o 'maxhp)))
+
+(define (hp-gauge-color o)
+  (define ratio (hp-ratio o))
+  (cond [(> ratio .75) "green"][(> ratio .4) "yellow"][else "red"]))
+
 
 ; turn a msg into a set of colored strings.
 (define (msg->colored-strings m [l (list "white")])
@@ -121,6 +126,16 @@
 
 ;; DRAWING FUNCTIONS
 
+(define (draw-object-bitmap dc w ctx o x y)
+  (cond 
+    [(= (world-player-pos w) (obget o 'pos))
+     (send dc draw-bitmap (rep->bitmap o) x y)]
+    [(obhas? o 'flag-actor) 
+     (when (< (obget o 'hp) (obget o 'maxhp))
+       (draw-fuel-line dc x (+  y bitmap-size) bitmap-size (hp-ratio o) (hp-gauge-color o)))
+     (send dc draw-bitmap (rep->bitmap o) x y) ]
+    [else (send dc draw-bitmap (rep->bitmap o) x y)]))
+
 ; draw a rectangle of base-size with the given color and alpha.
 (define (draw-tile dc ctx cam p c a)
   (define p2 (camera-pos cam p))
@@ -131,25 +146,33 @@
         (* (context-base-size ctx) (pos-x p2)) (* (context-base-size ctx) (pos-y p2)) sz sz)
   (send dc set-alpha 1))
 
+
 ; draw one game object. Use in-fov? flag to draw alpha if necessary.
-(define (draw-object dc ctx cam o p in-fov?)
+(define (draw-object dc w ctx cam o p in-fov?)
   (define p2 (camera-pos cam p))
   (when (and (>= (pos-x p2) 0) (>= (pos-y p2) 0) 
              (< (pos-x p2) (camera-width cam)) (< (pos-y p2) (camera-height cam)))
+    (define x (* (pos-x p2) (context-base-size ctx))) 
+    (define y (* (pos-y p2) (context-base-size ctx))) 
     (cond 
       [(eq? (context-mode ctx) 'text)
        (send dc set-text-foreground (obget o 'color))
-       (send dc draw-text (obget o 'rep) 
-             (* (pos-x p2) (context-base-size ctx)) (* (pos-y p2) (context-base-size ctx)))]
-      [else (send dc draw-bitmap (rep->bitmap o) 
-                  (* (pos-x p2) (context-base-size ctx)) (* (pos-y p2) (context-base-size ctx)))]) 
+       (send dc draw-text (obget o 'rep) x y)]
+      [else (draw-object-bitmap dc w ctx o x y)]) 
     (unless in-fov? (draw-tile dc ctx cam p dungeon-bg .6))))
 
+
+(define (draw-select-box dc w ctx cam p)
+  (define p2 (camera-pos cam p))
+  (send dc draw-bitmap (string->bitmap "select") 
+        (* (pos-x p2) (context-base-size ctx)) (* (pos-y p2) (context-base-size ctx))))
 
 ; draw highlight over looked-at object.
 (define (draw-look-at dc w ctx cam)
   (define look-pos (get-look-at-pos w))
-  (when look-pos (draw-tile dc ctx cam look-pos "red" .5)))
+  (when look-pos 
+    (if (eq? 'text (context-mode ctx)) (draw-tile dc ctx cam look-pos "red" .5)
+        (draw-select-box dc w ctx cam look-pos))))
 
 ; draw presence field.
 (define (draw-presence dc w ctx cam)
@@ -157,22 +180,20 @@
     (hash-for-each (obget (world-player-attribute w 'presence) 'points)
                    (λ (p w) (draw-tile dc ctx cam p "red" (max 0.1 w))))))
 
-
 (define (draw-items dc w ctx cam)
   (for ([p (obget (world-player w) 'objects-in-fov)])
     (define o (obget (world-items w) p))
-    (when o (draw-object dc ctx cam o p #t))))
+    (when o (draw-object dc w ctx cam o p #t))))
 
 (define (draw-actors dc w ctx cam)
   (for ([p (obget (world-player w) 'objects-in-fov)])
     (define o (obget (world-actors w) p))
-    (when o (draw-object dc ctx cam o p #t))))
+    (when o (draw-object dc w ctx cam o p #t))))
 
 (define (draw-terrain dc w ctx cam)
   (hash-for-each (obget w 'explored) 
-                 (λ (p v) (draw-object dc ctx cam (world-terrain w p) p 
+                 (λ (p v) (draw-object dc w ctx cam (world-terrain w p) p 
                                        (field-has-pos? (obget (world-player w) 'fov) p)))))
-
 
 (define (draw-game dc w ctx)
   (define cam (make-camera w ctx))
@@ -220,8 +241,7 @@
       (draw-message-list dc x (+ text-size 3 y2) maxx (rest msgs)))))
 
 (define (draw-messages dc w ctx)
-  
-  (set-origin-to-context dc ctx)
+    (set-origin-to-context dc ctx)
   (clear-ui-view dc w ctx)
   
   (send dc set-text-foreground "gold")
@@ -241,60 +261,56 @@
   (send dc set-pen color 2 'transparent)
   (send dc draw-rectangle x y (* width ratio) height))
 
+(define (draw-fuel-line dc x y width ratio color)
+  (send dc set-pen color 2 'solid)
+  (send dc draw-line x y (+ x (* width ratio)) y) 
+  (send dc set-pen color 2 'transparent))
+
 
 (define (draw-hp dc w ctx)
   (define p (world-player w))
-  (define ratio (/ (obget p 'hp) (obget p 'maxhp)))
   (define s (format "Hp: ~a / ~a" 
                     (obget p 'hp)  (obget p 'maxhp)))
-
-  (define c (cond [(> ratio .9) "green"][(> ratio .4) "yellow"][else "red"]))
+  (define c (hp-gauge-color p))
 
   (send dc set-text-foreground c)
   (send dc draw-text s 0 0)
   (draw-fuel-gauge dc (+ 5 (get-string-width dc s)) 2 
-                 (* text-size 10) text-size ratio c))
+                   (* text-size 10) text-size (hp-ratio p) c))
 
 (define (draw-look-at-message dc w ctx)
   (define look-pos (get-look-at-pos w))
-
   (when look-pos
     (let* ([o (world-actor w look-pos)]
            [o (if o o (world-item w look-pos))])
-      (draw-colorful-strings 
-       dc text-size (- (context-height ctx) text-size text-size) 
-       "white" "You see " (obget o 'color) (obget o 'look-desc) "white" "."))))
-
-
+      (draw-colorful-strings dc 300 0 "white" 
+                             "You see " (obget o 'color) (obget o 'look-desc) "white" "."))))
 (define (draw-status dc w ctx)
   (set-origin-to-context dc ctx)
   (clear-ui-view dc w ctx)
   (draw-hp dc w ctx)
-  (draw-look-at-message dc w ctx)
-)
+  (draw-look-at-message dc w ctx))
+
+(define status-height bitmap-size)
+(define message-width (* 8 bitmap-size))
 
 (define (draw-game-view dc w width height)
   (define mode (world-player-attribute w 'graphics-mode 'graphics))
   (define base-size (get-base-size mode))
-  (define game-ctx (context mode base-size (pos 0 0) (floor (* width .8)) (floor (* height .9))))
-
+  (define game-ctx (context mode base-size (pos 0 0) (- width message-width) (- height status-height)))
   (define messages-ctx (context mode base-size 
                                 (pos-delta (context-origin game-ctx) (context-width game-ctx) 0) 
                                 (- width (context-width game-ctx)) (context-height game-ctx)))
   (define status-ctx (context mode base-size 
                               (pos-delta (context-origin game-ctx) 0 (context-height game-ctx)) 
-                              width (- height (context-height game-ctx))))
-  
+                              width (* 2 bitmap-size)))
   (clear-screen dc)
   (draw-game dc w game-ctx)
   (draw-messages dc w messages-ctx)
-  (draw-status dc w status-ctx)
-  
-)
+  (draw-status dc w status-ctx))
 
 (define views 
   (hash 'game draw-game-view))
-
 
 (define (ui-render-all dc w width height)
   ((hash-ref views 'game) dc w width height))

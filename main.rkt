@@ -20,7 +20,6 @@
 
    (define (word-tick w) w)])
 
-
 (define (main)
   (define w (msg-init (make-world)))
   (call-with-chaos 

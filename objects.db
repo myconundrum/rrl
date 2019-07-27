@@ -45,6 +45,7 @@
        "gold" : 0, 
        "hp" : 100,
        "maxhp" : 100,
+       "attack" : 1,
        "speed" : 1
         },
 "player": {
@@ -58,6 +59,7 @@
        "speed" : 0.5,
        "light" : 4,
        "stealth" : 5,
+       "attack" : 20,
        "look-at-index" : -1
         },
 "gold": {
