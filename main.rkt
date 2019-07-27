@@ -16,7 +16,7 @@
    
    (define (word-output w)
      (λ (width height dc)
-       (ui-draw-world dc (game-loop-world w) width height)))
+       (ui-render-all dc (game-loop-world w) width height)))
 
    (define (word-tick w) w)])
 
