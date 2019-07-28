@@ -114,10 +114,13 @@
 (define (random-pos w)
   (define p (random-ref (hash-keys (obget w 'terrain))))
   (if (not (or (item w p) (actor w p))) p (random-pos w)))
+
+(define treasure-list (list 'gold 'chainmail 'longsword))
+
 (define (gen-treasure w)
   (foldl (λ (n nw)
            (define p (random-pos nw))
-           (item-set nw p (ob 'gold #:pos p))) w (range 20)))
+           (item-set nw p (ob (random-ref treasure-list) #:pos p))) w (range 30)))
 (define (gen-monsters w)
   (foldl (λ (n nw)
            (define p (random-pos nw))

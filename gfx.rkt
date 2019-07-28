@@ -15,7 +15,6 @@
   bm)
 
 
-
 (define bitmap-hash
   (hash
    "." (file->bitmap "dngn//floor//sandstone_floor0.png")
@@ -23,8 +22,13 @@
    "o" (file->bitmap "mon//orc_warrior.png")
    "@" (file->bitmap "player//base//human_m.png")
    "$" (file->bitmap "item//gold//07.png")
-   
-   "select" (file->bitmap "misc//cursor_green.png")))
+   "[" (file->bitmap "item//armour//scale_mail1.png")
+   "|" (file->bitmap "item//weapon//long_sword1.png")
+   "select" (file->bitmap "misc//cursor_green.png")
+   "player sword" (file->bitmap "player//hand1/long_sword_slant.png")
+   "player armor" (file->bitmap "player//body/aragorn2.png")
+
+))
 
 
 (define (rep->bitmap o) (hash-ref bitmap-hash (obget o 'rep)))

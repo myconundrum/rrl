@@ -44,28 +44,50 @@
                           (player-attribute new-fov 'fov))))
 
 
+(define msg-attack 
+  "%color:actor %actor:look-desc %color:red attacks %color:target %target:look-desc %color:white for %actor:attack damage.")
+(define msg-dies
+  "%color:actor %actor:look-desc %color:white dies.")
+
 (define (remove-if-dead w p)
     (if (and (< (actor-attribute w p 'hp) 1) (not (= (player-pos w) p)))
-      (actor-delete w p) w))
+        (~>          
+         (msg-queue w (msg w (actor w p) (actor w p) msg-dies))
+         (actor-delete p)) w))
+
 
 (define (action-attack w apos tpos act) 
   (if (actor w tpos)
       (~> (actor-transform-attribute 
            w tpos 'hp  (λ (o v) (- v (actor-attribute w apos 'attack))))
-          (remove-if-dead tpos)) w))
+          (msg-queue (msg w (actor w apos) (actor w tpos) msg-attack))
+          (remove-if-dead tpos)
+
+
+) w))
 
 (define (action-look w apos tpos act) 
   (if (= apos (player-pos w)) (action-player-look w) w))
 
 (define (action-sleep w apos tpos act) w)
+
+(define msg-treasure
+  "%color:actor %actor:look-desc %color:white picked up %color:target %target:look-desc %color:white worth %target:gold gold.")
+(define msg-item "%color:actor %actor:look-desc %color:white picked up %color:target %target:look-desc.")
+
 (define (action-pickup w apos tpos act)
   (define t (item w tpos))
-  (if (and t (obhas? t 'flag-treasure))
-      (~> w 
+  (cond
+    [(and t (obhas? t 'flag-treasure))
+     (~> w 
           (actor-transform-attribute apos 'gold (λ (o v) (+ v (obget t 'gold))))
           (item-delete tpos)
-          (msg-queue (msg w (actor w apos) t 
-                          "%color:actor %actor:look-desc %color:white picked up %color:target %target:look-desc %color:white worth %target:gold gold."))) w ))
+          (msg-queue (msg w (actor w apos) t msg-treasure))) ]
+    [t (~> w 
+           (actor-set-attribute apos 'inventory (cons t (actor-attribute w apos 'inventory empty)))
+           (item-delete tpos)
+           (msg-queue (msg w (actor w apos) t msg-item)))]
+    [else w]))
 
 (define (action-move w apos tpos act)
   (define tposc (pos-clamp tpos 

@@ -1,6 +1,6 @@
 #lang racket
 
-(require lux lux/chaos/gui "actions.rkt" "ui.rkt" "world.rkt" "msg.rkt" )
+(require lux lux/chaos/gui "actions.rkt" "ui.rkt" "world.rkt" "msg.rkt" "tick.rkt" )
 
 ;; game-loop is the structure interfacing with lux to
 ;; drive the game state machine.
@@ -8,7 +8,7 @@
 
   #:methods gen:word
   [
-   (define (word-fps w) 0.0)
+   (define (word-fps w) 30.0)
    (define (word-label w framerate) "Racket RL")
    (define (word-event w e) 
      (let ([nw (ui-handle-input (game-loop-world w) e)])
@@ -18,7 +18,7 @@
      (λ (width height dc)
        (ui-render-all dc (game-loop-world w) width height)))
 
-   (define (word-tick w) w)])
+   (define (word-tick w) (game-loop (tick-update (game-loop-world w))))])
 
 (define (main)
   (define w (msg-init (make-world)))

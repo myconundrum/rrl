@@ -126,10 +126,18 @@
 
 ;; DRAWING FUNCTIONS
 
+(define (has-inventory-item w s)
+  (> (length (filter (λ (o) (string=? (obget o 'rep) s)) (player-attribute w 'inventory empty))) 0))
+
 (define (draw-object-bitmap dc w ctx o x y)
   (cond 
     [(= (player-pos w) (obget o 'pos))
-     (send dc draw-bitmap (rep->bitmap o) x y)]
+     (send dc draw-bitmap (rep->bitmap o) x y)
+     ; BUGBUG: dumb right now...hard coded, does nothing.
+     (when (has-inventory-item w "[") 
+       (send dc draw-bitmap (string->bitmap "player armor") x y))
+     (when (has-inventory-item w "|") 
+       (send dc draw-bitmap (string->bitmap "player sword") x y))]
     [(obhas? o 'flag-actor) 
      (when (< (obget o 'hp) (obget o 'maxhp))
        (draw-fuel-line dc x (+  y bitmap-size) bitmap-size (hp-ratio o) (hp-gauge-color o)))
@@ -159,7 +167,10 @@
        (send dc set-text-foreground (obget o 'color))
        (send dc draw-text (obget o 'rep) x y)]
       [else (draw-object-bitmap dc w ctx o x y)]) 
-    (unless in-fov? (draw-tile dc ctx cam p dungeon-bg .6))))
+    
+    (draw-tile dc ctx cam p dungeon-bg 
+               (if in-fov? (max 0 (- .8 (player-attribute w 'light-intensity)
+                                     (field-get-pos (player-attribute w 'fov) p))) .8 ))))
 
 
 (define (draw-select-box dc w ctx cam p)
