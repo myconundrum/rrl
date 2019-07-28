@@ -1,6 +1,6 @@
 #lang racket
 
-(provide ui-handle-input ui-render-all)
+(provide ui-render-all)
 
 (require lux lux/chaos/gui lux/chaos/gui/key racket/draw racket/string
          "actions.rkt" "world.rkt" "config.rkt" "gfx.rkt"
@@ -9,33 +9,6 @@
 (define ui-bg "Dark Slate Gray")
 (define dungeon-bg "black")
 
-(define (debug-presence-view w)
-  (player-transform w (λ (o) (obflip-flag o 'debug-show-presence))))
-
-(define (graphics-mode-toggle w)
-  (player-transform-attribute w 'graphics-mode  (λ (o v) (if (eq? 'text v) 'graphics 'text))))
-
-(define (ui-handle-input w e)
-  (define p (player-pos w))
-  
-  (define new-world  
-    (cond
-      [(key-event? e)
-       (case (send e get-key-code)
-         [(#\a left) (action-enqueue w 'action-move p (pos-delta p -1 0))]
-         [(#\d right) (action-enqueue w 'action-move p (pos-delta p 1 0))]
-         [(#\s down)(action-enqueue w 'action-move p (pos-delta p 0 1)) ]
-         [(#\w up) (action-enqueue w 'action-move p (pos-delta p 0 -1))]
-         [(#\p) (debug-presence-view w)]
-         [(#\b) (action-enqueue w 'action-look-at p 0)]
-         [(#\m) (graphics-mode-toggle w)]
-         [(escape) (action-cancel-modes w)]
-         [(#\q) #f]
-         [else w])]
-      [(eq? 'close w) #f]
-      [else w]))
-  
-  (if new-world (action-update new-world) new-world))
 
 ;; STRUCTURES
 
@@ -262,7 +235,9 @@
                              (pos-y (player-pos w))
                             (quotient (game-time w) 100)) 0 0)
   
-  (draw-message-list dc 0 50 (context-width ctx) (get-messages w)))
+  (cond 
+    [(player-attribute w 'inventory-mode) #t]
+    [else (draw-message-list dc 0 50 (context-width ctx) (get-messages w)) ]))
 
 (define (draw-fuel-gauge dc x y width height ratio color)
   (send dc set-pen color 2 'solid)

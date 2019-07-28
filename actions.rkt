@@ -7,7 +7,7 @@
          action-update
          action-cancel-modes)
 
-(require threading "pos.rkt" "field.rkt" "world.rkt" "object.rkt" "player.rkt" "msg.rkt")
+(require threading "pos.rkt" "field.rkt" "world.rkt" "combat.rkt" "object.rkt" "player.rkt" "msg.rkt")
 
 ;
 ; cast a field of view at the current player position and then explore those 
@@ -45,7 +45,7 @@
 
 
 (define msg-attack 
-  "%color:actor %actor:look-desc %color:red attacks %color:target %target:look-desc %color:white for %actor:attack damage.")
+  "%color:actor %actor:look-desc %color:red attacks %color:target %target:look-desc %color:white for ~a damage.")
 (define msg-dies
   "%color:actor %actor:look-desc %color:white dies.")
 
@@ -57,10 +57,12 @@
 
 
 (define (action-attack w apos tpos act) 
-  (if (actor w tpos)
+  (define damage (melee-damage w apos tpos))
+  (if (and (actor w tpos) (melee-attack w apos tpos))
+
       (~> (actor-transform-attribute 
-           w tpos 'hp  (λ (o v) (- v (actor-attribute w apos 'attack))))
-          (msg-queue (msg w (actor w apos) (actor w tpos) msg-attack))
+           w tpos 'hp  (λ (o v) (- v damage)))
+          (msg-queue (msg w (actor w apos) (actor w tpos) msg-attack damage))
           (remove-if-dead tpos)
 
 

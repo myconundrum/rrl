@@ -1,6 +1,6 @@
 #lang racket
 
-(require lux lux/chaos/gui "actions.rkt" "ui.rkt" "world.rkt" "msg.rkt" "tick.rkt" )
+(require lux lux/chaos/gui "actions.rkt" "ui.rkt" "input.rkt" "world.rkt" "msg.rkt" "tick.rkt" )
 
 ;; game-loop is the structure interfacing with lux to
 ;; drive the game state machine.

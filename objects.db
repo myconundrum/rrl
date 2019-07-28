@@ -45,6 +45,8 @@
        "gold" : 0, 
        "hp" : 100,
        "maxhp" : 100,
+       "base-damage" : 4,
+       "ac" : 10,
        "attack" : 1,
        "speed" : 1
         },
@@ -53,7 +55,9 @@
        "rep": "@",
        "color": "green",
        "flag-actor" : true,
-       "gold" : 0, 
+       "gold" : 0,
+       "ac" : 3,
+       "base-damage" : 1, 
        "hp" : 100,
        "maxhp" : 100,
        "speed" : 0.5,
@@ -67,12 +71,14 @@
        "look-desc" : "well used chainmail",
        "rep": "[",
        "color": "grey",
+       "ac" : 12,
        "weight" : 10 
 },
 "longsword": {
        "look-desc" : "a keen-edged long sword",
        "rep": "|",
        "color": "silver",
+       "base-damage" : 20,
        "weight" : 7 
 },
 "gold": {

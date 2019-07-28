@@ -1,38 +1,30 @@
-[[Sat 27 Jul 2019 5:55:13 PM]]: an adventurer picked up a keen-edged long sword.
-[[Sat 27 Jul 2019 5:55:16 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:17 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:18 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:18 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:19 PM]]: an evil orc attacks an adventurer for 1 damage.
-[[Sat 27 Jul 2019 5:55:19 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:19 PM]]: an evil orc dies.
-[[Sat 27 Jul 2019 5:55:20 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:20 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:22 PM]]: an evil orc attacks an adventurer for 1 damage.
-[[Sat 27 Jul 2019 5:55:22 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:23 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:23 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:23 PM]]: an evil orc dies.
-[[Sat 27 Jul 2019 5:55:26 PM]]: an evil orc picked up well used chainmail.
-[[Sat 27 Jul 2019 5:55:26 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:34 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:34 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:35 PM]]: an adventurer picked up well used chainmail.
-[[Sat 27 Jul 2019 5:55:38 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:39 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:39 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:39 PM]]: an evil orc dies.
-[[Sat 27 Jul 2019 5:55:40 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:41 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:41 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:42 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:42 PM]]: an evil orc attacks an adventurer for 1 damage.
-[[Sat 27 Jul 2019 5:55:42 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:42 PM]]: an evil orc dies.
-[[Sat 27 Jul 2019 5:55:44 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:45 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:46 PM]]: an evil orc attacks an adventurer for 1 damage.
-[[Sat 27 Jul 2019 5:55:46 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:46 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:47 PM]]: an adventurer attacks an evil orc for 20 damage.
-[[Sat 27 Jul 2019 5:55:47 PM]]: an evil orc dies.
+[[Sat 27 Jul 2019 8:17:22 PM]]: an adventurer picked up a pile of gold worth 10 gold.
+[[Sat 27 Jul 2019 8:17:30 PM]]: an evil orc attacks an adventurer for 2 damage.
+[[Sat 27 Jul 2019 8:17:30 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:31 PM]]: an evil orc attacks an adventurer for 1 damage.
+[[Sat 27 Jul 2019 8:17:31 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:32 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:34 PM]]: an evil orc attacks an adventurer for 2 damage.
+[[Sat 27 Jul 2019 8:17:34 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:35 PM]]: an evil orc attacks an adventurer for 1 damage.
+[[Sat 27 Jul 2019 8:17:35 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:36 PM]]: an evil orc attacks an adventurer for 2 damage.
+[[Sat 27 Jul 2019 8:17:36 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:37 PM]]: an evil orc attacks an adventurer for 2 damage.
+[[Sat 27 Jul 2019 8:17:37 PM]]: an evil orc attacks an adventurer for 1 damage.
+[[Sat 27 Jul 2019 8:17:37 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:37 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:38 PM]]: an evil orc attacks an adventurer for 2 damage.
+[[Sat 27 Jul 2019 8:17:38 PM]]: an evil orc attacks an adventurer for 3 damage.
+[[Sat 27 Jul 2019 8:17:38 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:38 PM]]: an evil orc attacks an adventurer for 1 damage.
+[[Sat 27 Jul 2019 8:17:38 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:39 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:39 PM]]: an evil orc attacks an adventurer for 3 damage.
+[[Sat 27 Jul 2019 8:17:39 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:39 PM]]: an evil orc attacks an adventurer for 2 damage.
+[[Sat 27 Jul 2019 8:17:39 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:40 PM]]: an evil orc attacks an adventurer for 3 damage.
+[[Sat 27 Jul 2019 8:17:40 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:40 PM]]: an adventurer attacks an evil orc for 1 damage.
+[[Sat 27 Jul 2019 8:17:41 PM]]: an evil orc attacks an adventurer for 2 damage.
